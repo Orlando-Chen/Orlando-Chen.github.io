@@ -1,0 +1,136 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Orlando Chen"><meta name="copyright" content="Orlando Chen"><meta name="generator" content="Hexo 6.1.0"><meta name="theme" content="hexo-theme-yun"><title>算法学习---图的基本算法 | Orlando的窝</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.2.4/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="//at.alicdn.com/t/font_1140697_dxory92pb0h.js" async></script><script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/mini.global.js"></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"orlando-chen.github.io","root":"/","title":"CYFの小破站","version":"1.9.0","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"fireworks":{"colors":null},"vendors":{"darken":"https://cdn.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><meta name="description" content="简述图的定义： 图G由两个集合V和E组成，记为G&#x3D;(V,E)，其中V是顶点的有穷集合，E是顶点偶对（边）的有穷集合。 V(G),E(G)通常代表图G的顶点集合和边集合。若E(G)为有向边的集合，则该图为有向图；若E(G)为无向边的集合，则该图为无向图。  图的基本术语：子图、无向完全图和有向完全图、稠密图与稀疏图、邻接点、度和入度和出度、路径和路径长度、回路或环、连通和连通图和联通分量、">
+<meta property="og:type" content="article">
+<meta property="og:title" content="算法学习---图的基本算法">
+<meta property="og:url" content="https://orlando-chen.github.io/2022/05/24/graph/index.html">
+<meta property="og:site_name" content="Orlando的窝">
+<meta property="og:description" content="简述图的定义： 图G由两个集合V和E组成，记为G&#x3D;(V,E)，其中V是顶点的有穷集合，E是顶点偶对（边）的有穷集合。 V(G),E(G)通常代表图G的顶点集合和边集合。若E(G)为有向边的集合，则该图为有向图；若E(G)为无向边的集合，则该图为无向图。  图的基本术语：子图、无向完全图和有向完全图、稠密图与稀疏图、邻接点、度和入度和出度、路径和路径长度、回路或环、连通和连通图和联通分量、">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200829051207372.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTI5MDcwNDk=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190614102539684.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190614123537568.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122094334465.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122094526106.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20190614110614659.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122094654893.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122100134811.png">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122100041483.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122103041714.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181128111557505.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181122103948656.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2022-05-24T05:54:58.595Z">
+<meta property="article:modified_time" content="2022-05-24T09:23:06.247Z">
+<meta property="article:author" content="Orlando Chen">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200829051207372.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTI5MDcwNDk=,size_16,color_FFFFFF,t_70#pic_center"><script>(function() {
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Orlando Chen"><img width="96" loading="lazy" src="/images/avatar.png" alt="Orlando Chen"><span class="site-author-status" title="Wish you a good day!">🦄</span></a><div class="site-author-name"><a href="/about/">Orlando Chen</a></div><span class="site-name">Orlando的窝</span><sub class="site-subtitle">修狗SayHi!</sub><div class="site-description">落俗不可避免</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">6</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="/atom.xml" title="RSS" target="_blank" style="color:orange"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-rss-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" title="QQ" target="_blank" style="color:#12B7F5"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-qq-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/Orlando-Chen" title="GitHub" target="_blank" style="color:#6e5494"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=252444264" title="网易云音乐" target="_blank" style="color:#C20C0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AE%80%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">简述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%BE%E7%9A%84%E5%AE%9A%E4%B9%89%EF%BC%9A"><span class="toc-number">1.1.</span> <span class="toc-text">图的定义：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%BE%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%9C%AF%E8%AF%AD%EF%BC%9A"><span class="toc-number">1.2.</span> <span class="toc-text">图的基本术语：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%BE%E7%9A%84%E5%AE%9E%E4%BE%8B%EF%BC%9A"><span class="toc-number">1.3.</span> <span class="toc-text">图的实例：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%BE%E7%9A%84%E8%A1%A8%E7%A4%BA%EF%BC%88%E5%9B%BE%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">图的表示（图的数据结构）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%82%BB%E6%8E%A5%E8%A1%A8%E4%B8%8E%E9%82%BB%E6%8E%A5%E7%9F%A9%E9%98%B5%EF%BC%9A"><span class="toc-number">2.1.</span> <span class="toc-text">邻接表与邻接矩阵：</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%82%BB%E6%8E%A5%E8%A1%A8"><span class="toc-number">2.1.1.</span> <span class="toc-text">邻接表</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A0%E6%9D%83%E5%9B%BE%E8%A1%A8%E7%A4%BA"><span class="toc-number">2.1.1.1.</span> <span class="toc-text">加权图表示</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%82%BB%E6%8E%A5%E7%9F%A9%E9%98%B5"><span class="toc-number">2.1.2.</span> <span class="toc-text">邻接矩阵</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A0%E6%9D%83%E5%9B%BE%E8%A1%A8%E7%A4%BA-1"><span class="toc-number">2.1.2.1.</span> <span class="toc-text">加权图表示</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%81%E5%AD%97%E9%93%BE%E8%A1%A8%E6%B3%95%EF%BC%9A"><span class="toc-number">2.2.</span> <span class="toc-text">十字链表法：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%82%BB%E6%8E%A5%E5%A4%9A%E9%87%8D%E8%A1%A8%EF%BC%9A"><span class="toc-number">2.3.</span> <span class="toc-text">邻接多重表：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BE%B9%E9%9B%86%E6%95%B0%E7%BB%84%E6%B3%95%EF%BC%9A"><span class="toc-number">2.4.</span> <span class="toc-text">边集数组法：</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="https://orlando-chen.github.io/2022/05/24/graph/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Orlando Chen"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Orlando的窝"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">算法学习---图的基本算法</h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="Created: 2022-05-24 13:54:58" itemprop="dateCreated datePublished" datetime="2022-05-24T13:54:58+08:00">2022-05-24</time></div><div class="post-classify"></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="简述"><a href="#简述" class="headerlink" title="简述"></a><strong>简述</strong></h1><h2 id="图的定义："><a href="#图的定义：" class="headerlink" title="图的定义："></a>图的定义：</h2><ul>
+<li>图G由两个集合V和E组成，记为G&#x3D;(V,E)，其中V是顶点的有穷集合，E是顶点偶对（边）的有穷集合。</li>
+<li>V(G),E(G)通常代表图G的顶点集合和边集合。若E(G)为有向边的集合，则该图为有向图；若E(G)为无向边的集合，则该图为无向图。</li>
+</ul>
+<h2 id="图的基本术语："><a href="#图的基本术语：" class="headerlink" title="图的基本术语："></a>图的基本术语：</h2><p>子图、无向完全图和有向完全图、稠密图与稀疏图、邻接点、度和入度和出度、路径和路径长度、回路或环、连通和连通图和联通分量、强连通图等等。<br><img src="https://img-blog.csdnimg.cn/20200829051207372.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTI5MDcwNDk=,size_16,color_FFFFFF,t_70#pic_center" alt="图1" loading="lazy"></p>
+<ul>
+<li><strong>端点</strong>(end points)：对于边a来说，顶点U和顶点V是边a的两个端点。</li>
+<li><strong>相邻</strong>（也称附带(incident)）：若一个顶点是一条边的端点，则我们说该条边与该顶点相邻。例如边a，b与d都与顶点V相邻。</li>
+<li><strong>邻接点</strong>(adjacent)：一条边的两个端点互为邻接点。例如U和V。</li>
+<li><strong>顶点的度</strong>(degree)：与一个顶点相邻的边的数量称为该顶点的度。例如X的度为5。</li>
+<li><strong>平行边</strong>(Parallel edge)：若两条边的两个端点对应相同，则这两条边平行。例如图中的h与i。</li>
+<li><strong>自循环边</strong>(self-loop edge)：<strong>两个端点相同的边</strong>称为自循环边。例如j。</li>
+<li><strong>路径</strong>(Path)：一个包含不同顶点与边的序列。一条路径始于一个顶点，并终于一个顶点；路径序列（可以看成数组）中每条边的上一个元素是该条边的一个端点，下一个元素是该条边的另一个端点。</li>
+<li><strong>简单路径</strong>(Simple path)：若一条路径中所有顶点与边均<strong>只出现一次</strong>，则该路径为简单路径。例如P1 &#x3D; (V, b, X, h, Z)是一条简单路径，P2 &#x3D; (U, c, W, e, X, g, Y, f, W, d, V)是一条路径，但不是一条简单路径，因为W出现了两次。</li>
+<li><strong>循环</strong>(Cycle)：一个包含顶点与边的序列。始于一个顶点，终于一条边。若终于的那条边的一个端点是起始顶点，则这个序列是一个循环。</li>
+<li><strong>简单循环</strong>(Simple cycle)：若一个循环中所有顶点与边均只出现一次，则该循环为简单循环。<br><img src="https://img-blog.csdnimg.cn/20190614102539684.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70" alt="图2" loading="lazy"></li>
+<li><strong>连通</strong>：<strong>无向图</strong>G中，顶点a到顶点b有路径，则称它们是连通的。</li>
+<li><strong>连通图</strong>：V中任意两个顶点都是连通的，则G为连通图。</li>
+<li><strong>连通分量</strong>：<strong>无向图</strong>中的极大连通子图。</li>
+<li><strong>强连通图</strong>：<strong>有向图</strong>G中，V中任意两个顶点都是连通的，则G为强连通图。</li>
+<li><strong>稀疏图</strong>（sparse graph）&amp;<strong>稠密图</strong>（dense graph）：有很少条边或弧（边的条数|E|远小于|V|²）的图称为稀疏图，反之边的条数|E|接近|V|²，称为稠密图。简单来讲就是，边越多，图越稠密。</li>
+<li><strong>完全图</strong>：完全图是一个简单的无向图，其中每对不同的顶点之间都恰有一边相连。</li>
+<li><strong>子图</strong>：节点集和边集分别是某一图的节点集的子集和边集的子集的图。</li>
+<li><strong>加权图</strong>：用数学语言讲，设G为图，对图的每一条边e来说，都对应于一个实数W(e)（可以通俗的理解为边的“长度”，只是在数学定义中图的权可以为负数），我们把W（e）称为e的“权”。把这样的图G称为“加权图”。</li>
+</ul>
+<h2 id="图的实例："><a href="#图的实例：" class="headerlink" title="图的实例："></a>图的实例：</h2><p><a target="_blank" rel="noopener" href="https://wiki.mbalib.com/wiki/%E5%85%AD%E5%BA%A6%E7%A9%BA%E9%97%B4%E7%90%86%E8%AE%BA">六度空间理论</a>（Six Degrees of Separation）、交通运输网络等等。</p>
+<h1 id="图的表示（图的数据结构）"><a href="#图的表示（图的数据结构）" class="headerlink" title="图的表示（图的数据结构）"></a><strong>图的表示</strong>（图的数据结构）</h1><p>图分为有向图与无向图，有多种表示方法，可分为：</p>
+<ul>
+<li>初级表示：邻接表、邻接矩阵。</li>
+<li>高级表示：十字链表法、邻接多重表、边集数组法。</li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/Fitz_p/article/details/81263799">例题代码表示见此博客</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dzkang2011/p/graph_1.html">完整表示分析见此博客</a></li>
+</ul>
+<h2 id="邻接表与邻接矩阵："><a href="#邻接表与邻接矩阵：" class="headerlink" title="邻接表与邻接矩阵："></a>邻接表与邻接矩阵：</h2><ul>
+<li>可以表示有向图，无向图，有向加权图，无向加权图。</li>
+<li>通常采用邻接表表示法，因为用这种方法表示稀疏图比较紧凑。但当遇到稠密图或必须很快判别两个给定顶点是否存在连接边时，通常采用邻接矩阵表示法。例如求最短路径算法中，就采用邻接矩阵表示。</li>
+</ul>
+<h3 id="邻接表"><a href="#邻接表" class="headerlink" title="邻接表"></a>邻接表</h3><ul>
+<li>图的一种链式存储结构。</li>
+<li>邻接表&#x3D;表头结点表+边表<ul>
+<li>表头结点表：以顺序结构存储，便于随机访问任一顶点的边链表。<ul>
+<li>表头结点：数据域+链域。<ul>
+<li>数据域：存储顶点名称和其他信息。</li>
+<li>链域：指向链表中第一个结点。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>边表：邻接点域+数据域+链域。</li>
+</ul>
+</li>
+<li>优势：便于增加和删除顶点；便于统计边的数目；空间效率高，对稀疏图表示有优势。</li>
+<li>劣势：以顶点为单位地行保存，在大量边计划的场景下使用不方便，两个顶点之间是否有连接需要遍历；不便于判断两点间是否有边；不便于计算有向图各顶点的度。</li>
+<li>场景：稀疏矩阵，图较大时，加权图时使用。</li>
+<li>描述：<br><img src="https://img-blog.csdnimg.cn/20190614123537568.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70" alt="描述" loading="lazy"></li>
+<li>空间复杂度：O(n+m)</li>
+<li>时间复杂度：O(n+m)</li>
+<li>图G&#x3D;&lt;V，E&gt;的邻接表表示是由一个包含|V|个列表的数组Adj所组成，其中每个列表对应于V中的一个顶点。对于每一个u∈V，邻接表Adj[u]包含所有满足条件（u，v）∈E的顶点v。亦即，Adj[u]包含图G中所有和顶点u相邻的顶点。每个邻接表中的顶点一般以任意顺序存储。</li>
+<li>如果G是一个有向图，则所有邻接表的长度之和为|E|，这是因为一条形如（u，v）的边是通过让v出现在Adj[u]中来表示的。</li>
+<li>如果G是一个无向图，则所有邻接表的长度之和为2|E|，因为如果（u，v）是一条无向边，那么u会出现在v的邻接表中，反之亦然。邻接表需要的存储空间为O（V+E）。</li>
+<li>入度表示法（逆邻接表）：<br><img src="https://img-blog.csdnimg.cn/20181122094334465.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="入度" loading="lazy"></li>
+</ul>
+<h4 id="加权图表示"><a href="#加权图表示" class="headerlink" title="加权图表示"></a>加权图表示</h4><ul>
+<li>邻接表稍作变动，即可用来表示加权图，即每条边都有着相应权值的图，权值通常由加权函数w：E→R给出。</li>
+<li>例如，设G&#x3D;&lt;V，E&gt;是一个加权函数为w的加权图。对每一条边（u，v)∈E，权值w（u，v）和顶点v一起存储在u的邻接表中。<br><img src="https://img-blog.csdnimg.cn/20181122094526106.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="加权邻接表" loading="lazy"></li>
+</ul>
+<h3 id="邻接矩阵"><a href="#邻接矩阵" class="headerlink" title="邻接矩阵"></a>邻接矩阵</h3><ul>
+<li>优势：直观，便于判断i j两点间是否有边，根据A[i][j]&#x3D;0或1判断；便于计算各顶点的度。</li>
+<li>劣势：不便于增加或删除顶点；不利于计算边的数目；空间复杂度高。</li>
+<li>场景：图较小时，优先使用；不加权时，存储空间上有优势，可以用一个bit来代表是否有连通。</li>
+<li>观察无向图的邻接矩阵会发现，它是沿主对角线对称的。在一个无向图中，（u,v）和（v,u）表示同一条边，故无向图的邻接矩阵A的转置矩阵就是它本真。在某些应用中，可以<strong>只存储邻接矩阵的对角线以及对角线以上的部分</strong>，这样一来，图所占用的存储空间几乎可以减少一半。</li>
+<li>描述：<br><img src="https://img-blog.csdnimg.cn/20190614110614659.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70" alt="描述" loading="lazy"></li>
+<li>空间复杂度：O(n^2)</li>
+<li>时间复杂度：O(n^2)</li>
+</ul>
+<h4 id="加权图表示-1"><a href="#加权图表示-1" class="headerlink" title="加权图表示"></a>加权图表示</h4><p><img src="https://img-blog.csdnimg.cn/20181122094654893.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="加权邻接矩阵" loading="lazy"></p>
+<h2 id="十字链表法："><a href="#十字链表法：" class="headerlink" title="十字链表法："></a>十字链表法：</h2><p>把有向图的出度与入度结合起来表示：<br><img src="https://img-blog.csdnimg.cn/20181122100134811.png" alt="图1" loading="lazy"><br><img src="https://img-blog.csdnimg.cn/20181122100041483.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="图2" loading="lazy"></p>
+<h2 id="邻接多重表："><a href="#邻接多重表：" class="headerlink" title="邻接多重表："></a>邻接多重表：</h2><ul>
+<li>无向图关注的是边的话，使用该方法。</li>
+<li>邻接表使用不便的情况如下：<br><img src="https://img-blog.csdnimg.cn/20181122103041714.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="邻接表" loading="lazy"></li>
+<li>邻接多重表设计方法：<br>仿照十字链表的方式，对边表结构进行改装，重新定义的边表结构如下：<table>
+<thead>
+<tr>
+<th align="center">iVex</th>
+<th align="center">iLink</th>
+<th align="center">jVex</th>
+<th align="center">jLink</th>
+</tr>
+</thead>
+</table>
+</li>
+</ul>
+<p>其中iVex和jVex是与某条边依附的两个顶点在顶点表中的下标。iLink指向依附顶点iVex的下一条边，jLink指向依附顶点jVex的下一条边。</p>
+<ul>
+<li>示意图：<br><img src="https://img-blog.csdnimg.cn/20181128111557505.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="多重表" loading="lazy"></li>
+</ul>
+<h2 id="边集数组法："><a href="#边集数组法：" class="headerlink" title="边集数组法："></a>边集数组法：</h2><p><img src="https://img-blog.csdnimg.cn/20181122103948656.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Rvbnk4MjA0MTg=,size_16,color_FFFFFF,t_70" alt="边集数组" loading="lazy"></p>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="Donate" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-hand-coin-line"></use></svg></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>Orlando Chen</li><li class="post-copyright-link"><strong>Post link: </strong><a href="https://orlando-chen.github.io/2022/05/24/graph/" title="算法学习---图的基本算法">https://orlando-chen.github.io/2022/05/24/graph/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> unless otherwise stated.</li></ul></article><div class="post-nav"><div class="post-nav-item"></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/05/21/GAvsDP/" rel="next" title="算法学习---贪心算法VS动态规划"><span class="post-nav-text">算法学习---贪心算法VS动态规划</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2022 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> Orlando Chen</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v6.1.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.9.0</span></div></footer><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a></div></body></html>
