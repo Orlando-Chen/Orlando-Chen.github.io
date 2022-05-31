@@ -31,7 +31,7 @@ document.addEventListener("pjax:success", initScrollReveal);
 <meta property="og:image" content="https://img-blog.csdnimg.cn/f63fe22abf0e41d8b19a7948028826ac.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1podVJhbkNoZW5n,size_16,color_FFFFFF,t_70#pic_center">
 <meta property="og:image" content="https://img-blog.csdnimg.cn/b795d21af85b4f16b48256c5e485a180.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1podVJhbkNoZW5n,size_16,color_FFFFFF,t_70#pic_center">
 <meta property="article:published_time" content="2022-05-30T23:54:01.208Z">
-<meta property="article:modified_time" content="2022-05-31T03:25:28.716Z">
+<meta property="article:modified_time" content="2022-05-31T07:05:26.013Z">
 <meta property="article:author" content="Orlando Chen">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://img-blog.csdnimg.cn/20190616160143745.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl8zODcxNjU2Nw==,size_16,color_FFFFFF,t_70"><script>(function() {
@@ -47,7 +47,7 @@ document.addEventListener("pjax:success", initScrollReveal);
 <li><strong>最小生成树</strong>：在连通网的所有生成树中，所有边的代价和最小的生成树，称为最小生成树。</li>
 <li>简单来说，对于一个有n个点的图，边一定是大于等于n − 1条。最小生成树就是在这些边中选择n − 1条出来连接所有的n个点，且这n − 1条边的边权之和是所有方案中最小的。</li>
 </ul>
-<h1 id="相关性质"><a href="#相关性质" class="headerlink" title="相关性质"></a><strong>相关性质</strong></h1><h2 id="性质1"><a href="#性质1" class="headerlink" title="性质1"></a>性质1</h2><p>一个无向图G，如果它的的边权都不相同，那么它的最小生成树<strong>唯一</strong>。</p>
+<h1 id="相关性质"><a href="#相关性质" class="headerlink" title="相关性质"></a><strong>相关性质</strong></h1><h2 id="性质1"><a href="#性质1" class="headerlink" title="性质1"></a>性质1</h2><p>一个无向图G，如果它的边权都不相同，那么它的最小生成树<strong>唯一</strong>。</p>
 <ul>
 <li>证明：<br>假设T1，T2是G的两棵最小生成树，其边集为E(T1) &#x3D; {e1,e2,…,en-1}且按边权值从小到大排序(ei &gt;&#x3D; ei-1)，E(T2) &#x3D; {f1,f2,…fn-1}且按边权值从小到大排序(fi &gt;&#x3D; fi-1)；设k是第一个使ek !&#x3D; fk的下标，不妨设fk &gt; ek，将ek加入到T2中，则T2必定存在一个含边ek环，且在环中必定存在一条边fj，且fj &gt; ek，否则将导致子集{f1,f2,…,fk-1,ek}已构成环与T1是生成树的矛盾。由此T2U{ek} {fj}也是一棵生成树，而且这棵最小生成树的权值小于T2，这与T2是图G的最小生成树矛盾。故不存在k使得ek !&#x3D; fk，即图的最小生成树唯一；同时可以得到，一个图的最小生成树的权值边表是唯一的。<h2 id="性质2"><a href="#性质2" class="headerlink" title="性质2"></a>性质2</h2>一个有n个顶点的生成树<strong>有且仅有n-1条边</strong>，<strong>如果生成树中再添加一条边，则必定成环。</strong></li>
 </ul>
