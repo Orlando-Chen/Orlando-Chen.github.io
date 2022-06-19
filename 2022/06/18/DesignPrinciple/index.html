@@ -1,0 +1,260 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Orlando Chen"><meta name="copyright" content="Orlando Chen"><meta name="generator" content="Hexo 6.1.0"><meta name="theme" content="hexo-theme-yun"><title>面向对象--设计原则 | Orlando的窝</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.2.4/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="//at.alicdn.com/t/font_1140697_dxory92pb0h.js" async></script><script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/mini.global.js"></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"orlando-chen.github.io","root":"/","title":"CYFの小破站","version":"1.9.0","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"fireworks":{"colors":null},"vendors":{"darken":"https://cdn.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><meta name="description" content="概述可维护与可复用 知名软件大师Robert C.Martin认为一个可维护性(Maintainability) 较低的软件设计，通常由于如下4个原因造成： 过于僵硬(Rigidity)  过于脆弱(Fragility)  复用率低(Immobility)  黏度过高(Viscosity)   软件工程和建模大师Peter Coad认为，一个好的系统设计应该具备如下三个性质： 可扩展性(Exten">
+<meta property="og:type" content="article">
+<meta property="og:title" content="面向对象--设计原则">
+<meta property="og:url" content="https://orlando-chen.github.io/2022/06/18/DesignPrinciple/index.html">
+<meta property="og:site_name" content="Orlando的窝">
+<meta property="og:description" content="概述可维护与可复用 知名软件大师Robert C.Martin认为一个可维护性(Maintainability) 较低的软件设计，通常由于如下4个原因造成： 过于僵硬(Rigidity)  过于脆弱(Fragility)  复用率低(Immobility)  黏度过高(Viscosity)   软件工程和建模大师Peter Coad认为，一个好的系统设计应该具备如下三个性质： 可扩展性(Exten">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://orlando-chen.github.io/images/bridge.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/Strategy1.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/OCP1.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/OCP2.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/Facade.png">
+<meta property="article:published_time" content="2022-06-18T06:46:44.808Z">
+<meta property="article:modified_time" content="2022-06-19T03:51:34.516Z">
+<meta property="article:author" content="Orlando Chen">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://orlando-chen.github.io/images/bridge.png"><script>(function() {
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Orlando Chen"><img width="96" loading="lazy" src="/images/avatar.png" alt="Orlando Chen"><span class="site-author-status" title="Wish you a good day!">🦄</span></a><div class="site-author-name"><a href="/about/">Orlando Chen</a></div><span class="site-name">Orlando的窝</span><sub class="site-subtitle">修狗SayHi!</sub><div class="site-description">落俗不可避免</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">12</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="/atom.xml" title="RSS" target="_blank" style="color:orange"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-rss-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" title="QQ" target="_blank" style="color:#12B7F5"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-qq-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/Orlando-Chen" title="GitHub" target="_blank" style="color:#6e5494"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=252444264" title="网易云音乐" target="_blank" style="color:#C20C0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%AF%E7%BB%B4%E6%8A%A4%E4%B8%8E%E5%8F%AF%E5%A4%8D%E7%94%A8"><span class="toc-number">1.1.</span> <span class="toc-text">可维护与可复用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99"><span class="toc-number">1.2.</span> <span class="toc-text">设计原则</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BC%80%E9%97%AD%E5%8E%9F%E5%88%99%EF%BC%88OCP%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">开闭原则（OCP）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89"><span class="toc-number">2.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E8%B6%8A%E6%80%A7"><span class="toc-number">2.2.</span> <span class="toc-text">优越性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%81%E8%A3%85%E5%8F%AF%E5%8F%98%E6%80%A7%E5%8E%9F%E5%88%99"><span class="toc-number">2.3.</span> <span class="toc-text">封装可变性原则</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E7%9A%84%E6%94%AF%E6%8C%81"><span class="toc-number">2.4.</span> <span class="toc-text">设计模式的支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%8B%E9%A2%98"><span class="toc-number">2.5.</span> <span class="toc-text">例题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%87%8C%E6%B0%8F%E6%9B%BF%E6%8D%A2%E5%8E%9F%E5%88%99"><span class="toc-number">3.</span> <span class="toc-text">里氏替换原则</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89-1"><span class="toc-number">3.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">3.2.</span> <span class="toc-text">适用场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.3.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BE%9D%E8%B5%96%E5%80%92%E8%BD%AC%E5%8E%9F%E5%88%99"><span class="toc-number">4.</span> <span class="toc-text">依赖倒转原则</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89-2"><span class="toc-number">4.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E5%88%99%E5%88%86%E6%9E%90"><span class="toc-number">4.2.</span> <span class="toc-text">原则分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%8E%A5%E5%8F%A3%E7%9A%84%E4%BC%98%E7%82%B9"><span class="toc-number">4.3.</span> <span class="toc-text">使用接口的优点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%9D%E8%B5%96%E4%BA%8E%E6%8A%BD%E8%B1%A1"><span class="toc-number">4.4.</span> <span class="toc-text">依赖于抽象</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%A6%E6%9D%9F"><span class="toc-number">4.5.</span> <span class="toc-text">约束</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%90%88%E6%88%90%E5%A4%8D%E7%94%A8%E5%8E%9F%E5%88%99"><span class="toc-number">5.</span> <span class="toc-text">合成复用原则</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89-3"><span class="toc-number">5.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E5%88%99%E5%88%86%E6%9E%90-1"><span class="toc-number">5.2.</span> <span class="toc-text">原则分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="toc-number">5.3.</span> <span class="toc-text">优缺点</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%AA%E7%B1%B3%E7%89%B9%E5%8E%9F%E5%88%99"><span class="toc-number">6.</span> <span class="toc-text">迪米特原则</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89-4"><span class="toc-number">6.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E5%88%99%E5%88%86%E6%9E%90-2"><span class="toc-number">6.2.</span> <span class="toc-text">原则分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%BC%8F%E6%94%AF%E6%8C%81"><span class="toc-number">6.3.</span> <span class="toc-text">模式支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E4%B8%AD%E7%9A%84%E4%BD%93%E7%8E%B0"><span class="toc-number">6.4.</span> <span class="toc-text">设计中的体现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8E%A5%E5%8F%A3%E9%9A%94%E7%A6%BB%E5%8E%9F%E5%88%99"><span class="toc-number">7.</span> <span class="toc-text">接口隔离原则</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89-5"><span class="toc-number">7.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E5%88%99%E5%88%86%E6%9E%90-3"><span class="toc-number">7.2.</span> <span class="toc-text">原则分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%95%E4%B8%80%E8%81%8C%E8%B4%A3%E5%8E%9F%E5%88%99"><span class="toc-number">8.</span> <span class="toc-text">单一职责原则</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89-6"><span class="toc-number">8.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E5%88%99%E5%88%86%E6%9E%90-4"><span class="toc-number">8.2.</span> <span class="toc-text">原则分析</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="https://orlando-chen.github.io/2022/06/18/DesignPrinciple/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Orlando Chen"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Orlando的窝"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">面向对象--设计原则</h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="Created: 2022-06-18 14:46:44" itemprop="dateCreated datePublished" datetime="2022-06-18T14:46:44+08:00">2022-06-18</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <time title="Modified: 2022-06-19 11:51:34" itemprop="dateModified" datetime="2022-06-19T11:51:34+08:00">2022-06-19</time></div><div class="post-classify"></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><h2 id="可维护与可复用"><a href="#可维护与可复用" class="headerlink" title="可维护与可复用"></a>可维护与可复用</h2><ul>
+<li>知名软件大师Robert C.Martin认为一个可维护性(Maintainability) 较低的软件设计，通常由于如下4个原因造成：<ul>
+<li>过于僵硬(Rigidity) </li>
+<li>过于脆弱(Fragility) </li>
+<li>复用率低(Immobility) </li>
+<li>黏度过高(Viscosity)</li>
+</ul>
+</li>
+<li>软件工程和建模大师Peter Coad认为，一个好的系统设计应该具备如下三个性质：<ul>
+<li>可扩展性(Extensibility) </li>
+<li>灵活性(Flexibility)</li>
+<li>可插入性(Pluggability)</li>
+</ul>
+</li>
+</ul>
+<h2 id="设计原则"><a href="#设计原则" class="headerlink" title="设计原则"></a>设计原则</h2><p>常用的面向对象设计原则包括7个，这些原则并不是孤立存在的，它们相互依赖，相互补充。</p>
+<table>
+<thead>
+<tr>
+<th align="center">设计原则名称</th>
+<th align="center">设计原则简介</th>
+<th align="center">重要性</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">单一职责原则(Single Responsibility Principle, SRP)</td>
+<td align="center">类的职责要单一，不能将太多的职责放在一个类中</td>
+<td align="center">★★★★☆</td>
+</tr>
+<tr>
+<td align="center">开闭原则(Open-Closed Principle, OCP)</td>
+<td align="center">软件实体对扩展是开放的，但对修改是关闭的，即在不修改一个软件实体的基础上去扩展其功能</td>
+<td align="center">★★★★★</td>
+</tr>
+<tr>
+<td align="center">里氏代换原则(Liskov Substitution Principle, LSP)</td>
+<td align="center">在软件系统中，一个可以接受基类对象的地方必然可以接受一个子类对象</td>
+<td align="center">★★★★☆</td>
+</tr>
+<tr>
+<td align="center">依赖倒转原则(Dependency Inversion Principle, DIP)</td>
+<td align="center">要针对抽象层编程，而不要针对具体类编程</td>
+<td align="center">★★★★★</td>
+</tr>
+<tr>
+<td align="center">接口隔离原则(Interface Segregation Principle, ISP)</td>
+<td align="center">使用多个专门的接口来取代一个统一的接口</td>
+<td align="center">★★☆☆☆</td>
+</tr>
+<tr>
+<td align="center">合成复用原则(Composite Reuse Principle, CRP)</td>
+<td align="center">在系统中应该尽量多使用组合和聚合关联关系，尽量少使用甚至不使用继承关系中</td>
+<td align="center">★★★★☆</td>
+</tr>
+<tr>
+<td align="center">迪米特法则(Law of Demeter, LoD)</td>
+<td align="center">一个软件实体对其他实体的引用越少越好，或者说如果两个类不必彼此直接通信，那么这两个类就不应当发生直接的相互作用，而是通过引入一个第三者发生间接交互</td>
+<td align="center">★★★☆☆</td>
+</tr>
+</tbody></table>
+<h1 id="开闭原则（OCP）"><a href="#开闭原则（OCP）" class="headerlink" title="开闭原则（OCP）"></a>开闭原则（OCP）</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>软件组成实体应该是<strong>可扩展</strong>的，但是<strong>不可修改</strong>的。</li>
+<li>开放-封闭法则认为应该试图去设计出永远也不需要改变的模块。</li>
+</ul>
+<h2 id="优越性"><a href="#优越性" class="headerlink" title="优越性"></a>优越性</h2><ul>
+<li>通过扩展已有的软件系统,可以提供新的行为,以满足对软件的新需求,使变化中的软件系统有一定的适应性和灵活性。</li>
+<li>已有的软件模块,特别是最重要的抽象层模块不能再修改,这就使变化中的软件系统有一定的稳定性和延续性。<blockquote>
+<p>PS：面向对象的说法就是不允许更改系统的抽象层,而允许扩展的是系统的实现层。</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="封装可变性原则"><a href="#封装可变性原则" class="headerlink" title="封装可变性原则"></a>封装可变性原则</h2><p>一种可变性不应散落在代码的很多角落，不应当与另一种可变性混合在一起。</p>
+<h2 id="设计模式的支持"><a href="#设计模式的支持" class="headerlink" title="设计模式的支持"></a>设计模式的支持</h2><ul>
+<li><p>比如Bridge桥梁模式：将抽象部分和实现部分分别封装，可以分别独立变化。<br><img src="/images/bridge.png" alt="bridge" loading="lazy"></p>
+</li>
+<li><p>策略模式也符合开闭原则。<br><img src="/images/Strategy1.png" alt="Strategy1" loading="lazy"></p>
+</li>
+</ul>
+<h2 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h2><p><img src="/images/OCP1.png" alt="OCP1" loading="lazy"><br>解答：<br><img src="/images/OCP2.png" alt="OCP2" loading="lazy"></p>
+<h1 id="里氏替换原则"><a href="#里氏替换原则" class="headerlink" title="里氏替换原则"></a>里氏替换原则</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>使用指向基类(超类)的引用的函数，必须能够在不知道具体派生类(子类)对象类型的情况下使用它们。</li>
+<li>所有派生类的行为功能必须和使用者对其基类的期望保持一致，如果派生类达不到这一点，那么必然违反里氏替换原则。（比如鸵鸟非鸟案例）</li>
+<li>里氏代换原则就是在设计时避免出现派生类与基类不一致的行为。</li>
+</ul>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><ul>
+<li>一个软件如果使用的是一个父类的话，如果把该父类换成子类，它不能察觉出父类对象和子类对象的区别，即凡是父类适用的地方子类应当也适用。</li>
+<li>继承只有满足里氏代换原则才是合理的。</li>
+<li>子类适用的地方不要求父类一定能适用。</li>
+<li>不满足里氏替换原则的场景有些可以适用Adapter模式来适配更改。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>LSP清楚地表明了IS-A关系全部都是与行为有关的。</li>
+<li>为了保持LSP，所有子类必须符合使用基类的client所期望的行为。</li>
+<li>一个子类型不得具有比基类型更多的限制，可能这对于基类型来说是合法的，但是可能会因为违背子类型的其中一个额外限制，从而违背了LSP！</li>
+<li>LSP保证一个子类总是能够被用在其基类可以出现的地方。</li>
+</ul>
+<h1 id="依赖倒转原则"><a href="#依赖倒转原则" class="headerlink" title="依赖倒转原则"></a>依赖倒转原则</h1><h2 id="定义-2"><a href="#定义-2" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>高层模块不应该依赖低层模块，它们都应该依赖抽象。抽象不应当依赖于细节，细节应当依赖于抽象。</li>
+<li>要<strong>针对接口编程</strong>，不要针对实现编程。</li>
+</ul>
+<h2 id="原则分析"><a href="#原则分析" class="headerlink" title="原则分析"></a>原则分析</h2><ul>
+<li>代码要依赖于抽象的类，而不要依赖于具体的类；要针对接口或抽象类编程，而不是针对具体类编程。</li>
+<li>实现开闭原则的关键是抽象化，并且从抽象化导出具体化实现，如果说开闭原则是面向对象设计的目标的话，那么依赖倒转原则就是面向对象设计的主要手段。 </li>
+<li>常用实现方式之一是在代码中使用抽象类，而将具体类放在配置文件中。 </li>
+<li>依赖倒转原则可以说是面向对象程序设计的标志，用哪种语言来编写程序并不重要，如果编写时考虑的都是如何针对抽象编程而不是针对细节编程，即程序中所有的依赖关系都是终止于抽象类或者接口，那就是面向对象设计，反之就是过程化设计。</li>
+</ul>
+<h2 id="使用接口的优点"><a href="#使用接口的优点" class="headerlink" title="使用接口的优点"></a>使用接口的优点</h2><ul>
+<li>Client不必知道其使用对象的具体所属类。</li>
+<li>一个对象可以很容易地被(实现了相同接口的)的另一个对象所替换。</li>
+<li>对象间的连接不必硬绑定(hardwire)到一个具体类的对象上，因此增加了灵活性。</li>
+<li>松散藕合(loosens coupling)。</li>
+<li>增加了重用的可能性。</li>
+<li>提高了(对象)组合的机率，因为被包含对象可以是任何实现了一个指定接口的类。</li>
+</ul>
+<h2 id="依赖于抽象"><a href="#依赖于抽象" class="headerlink" title="依赖于抽象"></a>依赖于抽象</h2><ul>
+<li>任何变量都不应该持有一个指向具体类的指针或引用。</li>
+<li>任何类都不应该从具体类派生。</li>
+<li>任何方法都不应该覆写它的任何基类中已实现了的方法。</li>
+</ul>
+<h2 id="约束"><a href="#约束" class="headerlink" title="约束"></a>约束</h2><ul>
+<li>如果一个类的实例必须使用另一个对象，而这个对象又属于一个特定的类，那么复用性会受到损害。</li>
+<li>如果“使用”类只需使用“被使用”类的某些方法，而不是要求“被使用”类与“使用”类有“is-a”的关系，就可考虑，让“被使用”类实现一个接口，“使用”类通过这个接口来使用需要的方法，从而限制了类之间的依赖。</li>
+<li>方案:为避免类之间因彼此使用而造成的耦合，让它们通过接口间接使用。</li>
+</ul>
+<h1 id="合成复用原则"><a href="#合成复用原则" class="headerlink" title="合成复用原则"></a>合成复用原则</h1><h2 id="定义-3"><a href="#定义-3" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>合成复用原则(Composite Reuse Principle, CRP)又称为组合&#x2F;聚合复用原则(Composition&#x2F; Aggregate Reuse Principle, CARP)。</li>
+<li>尽量使用对象组合，而不是继承来达到复用的目的。</li>
+<li>简言之，优先使用(对象)组合，而非(类)继承。</li>
+</ul>
+<h2 id="原则分析-1"><a href="#原则分析-1" class="headerlink" title="原则分析"></a>原则分析</h2><ul>
+<li>桥梁模式支持组合优先，继承只会使得问题越来越复杂。</li>
+<li>组合和聚合都是对象建模中关联（Association）关系的一种。<ul>
+<li>聚合表示整体与部分的关系。</li>
+<li>整体由部分组合而成，部分可以脱离整体作为一个独立的个体存在。</li>
+</ul>
+</li>
+<li>组合则是一种更强的关联，部分组成整体，而且不可分割，部分不能脱离整体而单独存在。<ul>
+<li>在组合关系中，部分和整体的生命周期一样。</li>
+<li>组合的新的对象完全支配其组成部分，包括他们的创建和销毁。一个组合关系中成分对象是不能与另外一个合成关系共享。</li>
+</ul>
+</li>
+</ul>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><ul>
+<li>优点：<ul>
+<li>容器类仅能通过被包含对象的接口来对其进行访问。</li>
+<li>“黑盒”复用，因为被包含对象的内部细节对外是不可见。</li>
+<li>实现上的相互依赖性比较小。</li>
+<li>每一个类只专注于一项任务。</li>
+<li>通过获取指向其它的具有相同类型的对象引用，可以在运行期间动态地定义(对象的)组合。</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>从而导致系统中的对象过多。</li>
+<li>为了能将多个不同的对象作为组合块(composition block)来使用，必须仔细地对接口进行定义。</li>
+</ul>
+</li>
+</ul>
+<h1 id="迪米特原则"><a href="#迪米特原则" class="headerlink" title="迪米特原则"></a>迪米特原则</h1><h2 id="定义-4"><a href="#定义-4" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>Law of Demeter，又叫做最少知识原则。</li>
+<li>每个软件单元对其它单元尽可能少了解，而且仅限于那些与自己密切相关的单元。也就是信息隐藏、封装。</li>
+</ul>
+<h2 id="原则分析-2"><a href="#原则分析-2" class="headerlink" title="原则分析"></a>原则分析</h2><ul>
+<li>简单地说，迪米特法则就是指一个软件实体应当尽可能少的与其他实体发生相互作用。</li>
+<li>这样，当一个模块修改时，就会尽量少的影响其他的模块，扩展会相对容易，这是对软件实体之间通信的限制，它要求限制软件实体之间通信的宽度和深度。</li>
+<li>在迪米特法则中，对于一个对象，其朋友包括以下几类：<ul>
+<li>当前对象本身(this)。</li>
+<li>以参数形式传入到当前对象方法中的对象。</li>
+<li>当前对象的成员对象。</li>
+<li>如果当前对象的成员对象是一个集合，那么集合中的元素也都是朋友。</li>
+<li>当前对象所创建的对象。<br>任何一个对象，如果满足上面的条件之一，就是当前对象的“朋友”，否则就是“陌生人”。</li>
+</ul>
+</li>
+</ul>
+<h2 id="模式支持"><a href="#模式支持" class="headerlink" title="模式支持"></a>模式支持</h2><p>Facade（门面）模式对LoD的体现：</p>
+<ul>
+<li>门面模式创造出一个门面对象。</li>
+<li>将客户端所涉及的属于内部类的数量减到最少。</li>
+<li>客户只需要和一个门面对象打交道。<br><img src="/images/Facade.png" alt="Facade" loading="lazy"></li>
+</ul>
+<h2 id="设计中的体现"><a href="#设计中的体现" class="headerlink" title="设计中的体现"></a>设计中的体现</h2><p>迪米特法则在详细设计中的体现</p>
+<ul>
+<li>尽量降低成员的访问权限————public -&gt; protected -&gt; private</li>
+<li>限制局部变量的有效范围：<ul>
+<li>变量要用到的时候才去声明它。<ul>
+<li>代码更好懂(一看就知道这个变量是什么类型)。</li>
+<li>该变量不容易被其它代码误改。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="接口隔离原则"><a href="#接口隔离原则" class="headerlink" title="接口隔离原则"></a>接口隔离原则</h1><h2 id="定义-5"><a href="#定义-5" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>使用多个专门的接口比使用单一的总接口好。</li>
+<li>一个类对另一个类的依赖应当建立在最小的接口上</li>
+</ul>
+<h2 id="原则分析-3"><a href="#原则分析-3" class="headerlink" title="原则分析"></a>原则分析</h2><ul>
+<li>角色的合理划分：一个接口应当简单的只代表一个角色。</li>
+<li>接口污染：<ul>
+<li>过于臃肿的接口是对接口的污染。</li>
+<li>不要把没什么关系的接口合并在一起。</li>
+</ul>
+</li>
+<li>接口隔离原则和迪米特法则的关系：<ul>
+<li>迪米特法则要求尽量限制通信的广度和深度。</li>
+<li>而对接口进行分割，使其最小化，避免对客户提供不需要的服务，当然是符合迪米特法则的。</li>
+</ul>
+</li>
+<li>体现了高内聚、低耦合。</li>
+<li>如果类的接口不是内聚的，就表示该类具有“胖”的接口。</li>
+<li>ISP建议客户程序不应该看到它们作为单一的类存在。客户程序看到的应该是多个具有内聚接口的抽象基类。</li>
+</ul>
+<h1 id="单一职责原则"><a href="#单一职责原则" class="headerlink" title="单一职责原则"></a>单一职责原则</h1><h2 id="定义-6"><a href="#定义-6" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>优良的系统设计强调模块间保持低耦合、高内聚的关系。</li>
+<li>一个类，最好只做一件事，只有一个引起它变化的原因：<ul>
+<li>如果一个类承担的职责过多，等于把这些职责耦合在了一起。</li>
+<li>这种耦合会导致脆弱的设计，当变化发生时，设计会遭受到意想不到的破坏。</li>
+</ul>
+</li>
+</ul>
+<h2 id="原则分析-4"><a href="#原则分析-4" class="headerlink" title="原则分析"></a>原则分析</h2><ul>
+<li>一个模块（或者大到类，小到方法）承担的职责越多，它被复用的可能性越小，而且如果一个类承担的职责过多，就相当于将这些职责耦合在一起，当其中一个职责变化时，可能会影响其他职责的运作。 </li>
+<li>类的职责主要包括两个方面：数据职责和行为职责，数据职责通过其属性来体现，而行为职责通过其方法来体现。</li>
+<li>单一职责原则是实现<strong>高内聚、低耦合</strong>的指导方针，在很多代码重构手法中都能找到它的存在，它是最简单但又最难运用的原则，需要设计人员发现类的不同职责并将其分离，而发现类的多重职责需要设计人员具有较强的分析设计能力和相关重构经验。</li>
+<li>在SRP中，我们把职责定义为“变化的原因”(a reason for change)。如果你能够想到多于一个的动机去改变类，那么这个类就具有多于一个的职责。<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span>  <span class="title class_">Modem</span>&#123;</span><br><span class="line">        <span class="keyword">public</span> :</span><br><span class="line">           <span class="function"><span class="type">void</span> <span class="title">dial</span><span class="params">(pno:String)</span>: ;</span></span><br><span class="line">           <span class="function"><span class="type">void</span> <span class="title">hangup</span><span class="params">()</span>: ;</span></span><br><span class="line">           <span class="function"><span class="type">void</span> <span class="title">send</span><span class="params">(c:Char)</span>: ;</span></span><br><span class="line">           <span class="function"><span class="type">void</span>  <span class="title">recv</span><span class="params">()</span>: ;</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></li>
+<li>上述Modem接口，大多数人会认为这个接口看起来非常合理。该接口声明了4个函数确实是Modem所具有的功能。然而，该接口却显示出了两个职责，一个是连接管理（dial+hangup），第二个是数据通信（send+recv）。</li>
+<li>这两个职责应该被分离开么？这依赖于应用程序的变化。是按照实际情况决定的。如果应用程序的变化会影响连接管理，那么设计就具有僵化的臭味。因为，调用send和recv的类必须要重新编辑。在这种情况下，这两个职责应该被分离，这样做会避免这两个职责耦合在一起。</li>
+<li>另一方面，如果应用程序的变化总是导致这两方面职责同时变化，那么就不必分离他们。实际上，分离他们就会具有不必要的复杂性臭味。</li>
+</ul>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="Donate" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-hand-coin-line"></use></svg></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>Orlando Chen</li><li class="post-copyright-link"><strong>Post link: </strong><a href="https://orlando-chen.github.io/2022/06/18/DesignPrinciple/" title="面向对象--设计原则">https://orlando-chen.github.io/2022/06/18/DesignPrinciple/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> unless otherwise stated.</li></ul></article><div class="post-nav"><div class="post-nav-item"></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/06/16/DesignPatten/" rel="next" title="面向对象--设计模式"><span class="post-nav-text">面向对象--设计模式</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2022 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> Orlando Chen</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v6.1.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.9.0</span></div></footer><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a></div></body></html>
