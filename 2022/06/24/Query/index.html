@@ -1,0 +1,515 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Orlando Chen"><meta name="copyright" content="Orlando Chen"><meta name="generator" content="Hexo 6.1.0"><meta name="theme" content="hexo-theme-yun"><title>查询处理与优化 | Orlando的窝</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.2.4/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="//at.alicdn.com/t/font_1140697_dxory92pb0h.js" async></script><script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/mini.global.js"></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"orlando-chen.github.io","root":"/","title":"CYFの小破站","version":"1.9.0","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"fireworks":{"colors":null},"vendors":{"darken":"https://cdn.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><meta name="description" content="查询处理基本步骤 解析与翻译 语法分析器检查语法，验证关系。 把查询语句翻译成系统的内部表示形式，也就是翻译成关系代数。   优化：在所有等效执行计划中选择具有最小查询执行代价的计划。 执行 查询执行引擎接收一个查询执行计划，执行该计划并把结果返回给查询。     查询代价的度量 查询处理的代价可以通过该查询对各种资源的使用情况进行度量。 这些资源包括磁盘存取，执行一个查询所用 CPU 时间，甚至">
+<meta property="og:type" content="article">
+<meta property="og:title" content="查询处理与优化">
+<meta property="og:url" content="https://orlando-chen.github.io/2022/06/24/Query/index.html">
+<meta property="og:site_name" content="Orlando的窝">
+<meta property="og:description" content="查询处理基本步骤 解析与翻译 语法分析器检查语法，验证关系。 把查询语句翻译成系统的内部表示形式，也就是翻译成关系代数。   优化：在所有等效执行计划中选择具有最小查询执行代价的计划。 执行 查询执行引擎接收一个查询执行计划，执行该计划并把结果返回给查询。     查询代价的度量 查询处理的代价可以通过该查询对各种资源的使用情况进行度量。 这些资源包括磁盘存取，执行一个查询所用 CPU 时间，甚至">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://orlando-chen.github.io/images/QueryHandle.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/QianTao1.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/costEx1.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/SanLieJoin.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/WuHuaEx.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/YouHuaEx1.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/YouHuaEx2.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DengJiaRule.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DengJiaRule2.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DengJiaRule3.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DengJiaRule4.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DengJiaRule5.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DengJiaRule6.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/LeftDeepTree.png">
+<meta property="article:published_time" content="2022-06-24T14:53:38.632Z">
+<meta property="article:modified_time" content="2022-06-25T08:07:59.173Z">
+<meta property="article:author" content="Orlando Chen">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://orlando-chen.github.io/images/QueryHandle.png"><script>(function() {
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Orlando Chen"><img width="96" loading="lazy" src="/images/avatar.png" alt="Orlando Chen"><span class="site-author-status" title="Wish you a good day!">🦄</span></a><div class="site-author-name"><a href="/about/">Orlando Chen</a></div><span class="site-name">Orlando的窝</span><sub class="site-subtitle">修狗SayHi!</sub><div class="site-description">落俗不可避免</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">16</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="/atom.xml" title="RSS" target="_blank" style="color:orange"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-rss-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" title="QQ" target="_blank" style="color:#12B7F5"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-qq-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/Orlando-Chen" title="GitHub" target="_blank" style="color:#6e5494"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=252444264" title="网易云音乐" target="_blank" style="color:#C20C0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">查询处理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.1.</span> <span class="toc-text">基本步骤</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BB%A3%E4%BB%B7%E7%9A%84%E5%BA%A6%E9%87%8F"><span class="toc-number">1.2.</span> <span class="toc-text">查询代价的度量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E7%B3%BB%E4%BB%A3%E6%95%B0%E8%BF%90%E7%AE%97%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="toc-number">1.3.</span> <span class="toc-text">关系代数运算的执行</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E8%BF%90%E7%AE%97"><span class="toc-number">1.3.1.</span> <span class="toc-text">选择运算</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E6%89%AB%E6%8F%8F"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">文件扫描</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95A1%E2%80%94%E2%80%94%E7%BA%BF%E6%80%A7%E6%90%9C%E7%B4%A2"><span class="toc-number">1.3.1.1.1.</span> <span class="toc-text">算法A1——线性搜索</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9"><span class="toc-number">1.3.1.2.</span> <span class="toc-text">利用索引的选择</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95A2%E2%80%94%E2%80%94%E4%B8%BB%E7%B4%A2%E5%BC%95%EF%BC%8C%E7%A0%81%E5%B1%9E%E6%80%A7%E7%AD%89%E5%80%BC%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.1.2.1.</span> <span class="toc-text">算法A2——主索引，码属性等值比较</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95A3%E2%80%94%E2%80%94%E4%B8%BB%E7%B4%A2%E5%BC%95%EF%BC%8C%E9%9D%9E%E7%A0%81%E5%B1%9E%E6%80%A7%E7%AD%89%E5%80%BC%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.1.2.2.</span> <span class="toc-text">算法A3——主索引，非码属性等值比较</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95A4%E2%80%94%E2%80%94%E8%BE%85%E5%8A%A9%E7%B4%A2%E5%BC%95%EF%BC%8C%E7%AD%89%E5%80%BC%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.1.2.3.</span> <span class="toc-text">算法A4——辅助索引，等值比较</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B6%89%E5%8F%8A%E6%9F%A5%E8%AF%A2%E8%8C%83%E5%9B%B4-%E6%AF%94%E8%BE%83-%E7%9A%84%E9%80%89%E6%8B%A9"><span class="toc-number">1.3.1.3.</span> <span class="toc-text">涉及查询范围(比较)的选择</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95A5%E2%80%94%E2%80%94%E4%B8%BB%E7%B4%A2%E5%BC%95%EF%BC%8C%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.1.3.1.</span> <span class="toc-text">算法A5——主索引，比较</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95A6%E2%80%94%E2%80%94%E8%BE%85%E5%8A%A9%E7%B4%A2%E5%BC%95%EF%BC%8C%E6%AF%94%E8%BE%83"><span class="toc-number">1.3.1.3.2.</span> <span class="toc-text">算法A6——辅助索引，比较</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9E%E6%8E%A5%E8%BF%90%E7%AE%97"><span class="toc-number">1.3.2.</span> <span class="toc-text">连接运算</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B5%8C%E5%A5%97%E5%BE%AA%E7%8E%AF%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">嵌套循环连接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9D%97%E5%B5%8C%E5%A5%97%E5%BE%AA%E7%8E%AF%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.3.2.2.</span> <span class="toc-text">块嵌套循环连接</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%94%B9%E8%BF%9B%E5%B5%8C%E5%A5%97%E5%BE%AA%E7%8E%AF%E4%B8%8E%E5%9D%97%E5%B5%8C%E5%A5%97%E5%BE%AA%E7%8E%AF%E7%AE%97%E6%B3%95"><span class="toc-number">1.3.2.2.1.</span> <span class="toc-text">改进嵌套循环与块嵌套循环算法</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E5%BE%AA%E7%8E%AF%E5%B5%8C%E5%A5%97%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.3.2.3.</span> <span class="toc-text">索引循环嵌套连接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BD%92%E5%B9%B6%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.3.2.4.</span> <span class="toc-text">归并连接</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%B7%B7%E5%90%88%E5%BD%92%E5%B9%B6-%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.3.2.4.1.</span> <span class="toc-text">混合归并-连接</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%A3%E5%88%97%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.3.2.5.</span> <span class="toc-text">散列连接</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%AE%97%E6%B3%95"><span class="toc-number">1.3.2.5.1.</span> <span class="toc-text">算法</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A8%E8%BE%BE%E5%BC%8F%E8%AE%A1%E7%AE%97"><span class="toc-number">1.3.3.</span> <span class="toc-text">表达式计算</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%89%A9%E5%8C%96"><span class="toc-number">1.3.3.1.</span> <span class="toc-text">物化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B5%81%E6%B0%B4%E7%BA%BF"><span class="toc-number">1.3.3.2.</span> <span class="toc-text">流水线</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96"><span class="toc-number">2.</span> <span class="toc-text">查询优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">2.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AD%89%E4%BB%B7%E8%A7%84%E5%88%99"><span class="toc-number">2.2.</span> <span class="toc-text">等价规则</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%AC%A1%E5%BA%8F"><span class="toc-number">2.3.</span> <span class="toc-text">连接的次序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E4%BB%B7%E4%BC%B0%E8%AE%A1"><span class="toc-number">2.4.</span> <span class="toc-text">代价估计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%BB%93%E6%9E%9C%E9%9B%86%E7%BB%9F%E8%AE%A1%E5%A4%A7%E5%B0%8F%E7%9A%84%E4%BC%B0%E8%AE%A1"><span class="toc-number">2.4.1.</span> <span class="toc-text">表达式结果集统计大小的估计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B4%E6%96%B9%E5%9B%BE"><span class="toc-number">2.4.2.</span> <span class="toc-text">直方图</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E8%BF%90%E7%AE%97%E7%BB%93%E6%9E%9C%E5%A4%A7%E5%B0%8F%E7%9A%84%E4%BC%B0%E8%AE%A1"><span class="toc-number">2.4.3.</span> <span class="toc-text">选择运算结果大小的估计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E6%9D%82%E9%80%89%E6%8B%A9%E8%BF%90%E7%AE%97%E7%BB%93%E6%9E%9C%E7%9A%84%E5%A4%A7%E5%B0%8F%E4%BC%B0%E8%AE%A1"><span class="toc-number">2.4.4.</span> <span class="toc-text">复杂选择运算结果的大小估计</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92%E9%80%89%E6%8B%A9"><span class="toc-number">2.5.</span> <span class="toc-text">执行计划选择</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8E%E4%BB%A3%E4%BB%B7%E7%9A%84%E4%BC%98%E5%8C%96"><span class="toc-number">2.6.</span> <span class="toc-text">基于代价的优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A3%E4%BB%B7%E4%BC%98%E5%8C%96"><span class="toc-number">2.6.1.</span> <span class="toc-text">代价优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B7%A6%E6%B7%B1%E8%BF%9E%E6%8E%A5%E6%A0%91"><span class="toc-number">2.6.1.1.</span> <span class="toc-text">左深连接树</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%AF%E5%8F%91%E5%BC%8F%E4%BC%98%E5%8C%96"><span class="toc-number">2.7.</span> <span class="toc-text">启发式优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96%E5%99%A8"><span class="toc-number">2.8.</span> <span class="toc-text">查询优化器</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="https://orlando-chen.github.io/2022/06/24/Query/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Orlando Chen"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Orlando的窝"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">查询处理与优化</h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="Created: 2022-06-24 22:53:38" itemprop="dateCreated datePublished" datetime="2022-06-24T22:53:38+08:00">2022-06-24</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <time title="Modified: 2022-06-25 16:07:59" itemprop="dateModified" datetime="2022-06-25T16:07:59+08:00">2022-06-25</time></div><div class="post-classify"></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="查询处理"><a href="#查询处理" class="headerlink" title="查询处理"></a>查询处理</h1><h2 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h2><ul>
+<li>解析与翻译<ul>
+<li>语法分析器检查语法，验证关系。</li>
+<li>把查询语句翻译成系统的内部表示形式，也就是翻译成关系代数。</li>
+</ul>
+</li>
+<li><strong>优化</strong>：在所有等效执行计划中选择具有最小查询执行代价的计划。</li>
+<li>执行<ul>
+<li>查询执行引擎接收一个查询执行计划，执行该计划并把结果返回给查询。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/images/QueryHandle.png" alt="QueryHandle" loading="lazy"></p>
+<h2 id="查询代价的度量"><a href="#查询代价的度量" class="headerlink" title="查询代价的度量"></a>查询代价的度量</h2><ul>
+<li>查询处理的代价可以通过该查询对各种资源的使用情况进行度量。<ul>
+<li>这些资源包括磁盘存取，执行一个查询所用 CPU 时间，甚至是网络通信代价。</li>
+</ul>
+</li>
+<li>在磁盘上存取数据的代价通常是主要代价。通过以下指标来对其进行度量：<ul>
+<li>搜索磁盘次数 * 平均寻道时间</li>
+<li>读取的块数 * 平均块读取时间</li>
+<li>写入的块数 * 平均块写入时间<ul>
+<li>写入一个块的代价通常大于块读取的代价 <ul>
+<li>数据在写入后会被读取以确保写入正确</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>只用<strong>传输磁盘块数</strong>以及<strong>搜索磁盘次数</strong>来度量查询计算计划的代价<ul>
+<li>tT – 传输一个块的时间</li>
+<li>tS – 磁盘平均访问时间(磁盘搜索时间+旋转延迟)</li>
+<li>传输 b 个块以及执行 s 次磁盘搜索的操作代价：b * tT + s * tS</li>
+</ul>
+</li>
+<li>忽略 CPU 时间（实际应用中 CPU 时间应被考虑）</li>
+<li>代价估算没有包括将操作的最终结果写回磁盘的代价。</li>
+<li>若干算法可以通过使用额外的缓冲空间来减少磁盘 I&#x2F;O 操作。<ul>
+<li>可作为缓存来使用的实际内存量取决于查询执行期间其他并发查询和操作系统的进程。</li>
+<li>经常使用最坏的情况进行估计，假设仅仅只有运行所需最小内存量。</li>
+</ul>
+</li>
+</ul>
+<h2 id="关系代数运算的执行"><a href="#关系代数运算的执行" class="headerlink" title="关系代数运算的执行"></a>关系代数运算的执行</h2><h3 id="选择运算"><a href="#选择运算" class="headerlink" title="选择运算"></a>选择运算</h3><h4 id="文件扫描"><a href="#文件扫描" class="headerlink" title="文件扫描"></a>文件扫描</h4><h5 id="算法A1——线性搜索"><a href="#算法A1——线性搜索" class="headerlink" title="算法A1——线性搜索"></a>算法A1——线性搜索</h5><ul>
+<li>在线性搜索中，系统扫描每一个文件块，对所有记录都进行测试，看它们是否满足选择条件。</li>
+<li>开始时需要做一次磁盘搜索来访问文件的第一个块。<ul>
+<li>如果文件的块不是顺序存放的，也许需要更多的磁盘搜索，为了简化起见，教材忽略了这种情况。</li>
+</ul>
+</li>
+<li>时间代价 &#x3D;  br次磁盘块传输 + 1次磁盘搜索 &#x3D; br*tT + tS<ul>
+<li>br代表文件中的磁盘块数</li>
+</ul>
+</li>
+<li>对作用在候选码属性上的选择操作来说，系统在找到所需记录以后可以立即停止。<ul>
+<li>时间代价 &#x3D; (br &#x2F;2) 次磁盘块传输 + 1 次磁盘搜索。</li>
+<li>最坏情况下，需要br个块传输。</li>
+</ul>
+</li>
+<li>线性搜索可以被应用，不论选择条件，或者文件是否有序，或者是否有索引。</li>
+<li>二分搜索(折半查找)通常是没有意义的，因为数据不是连续存放的。<ul>
+<li>除非当有一个可用的索引时，才使用二分搜索。</li>
+<li>二分搜索比索引搜索需要更多的磁盘扫描。</li>
+</ul>
+</li>
+</ul>
+<h4 id="利用索引的选择"><a href="#利用索引的选择" class="headerlink" title="利用索引的选择"></a>利用索引的选择</h4><p>索引扫描 – 使用索引的搜索算法。选择条件必须是索引的搜索码</p>
+<h5 id="算法A2——主索引，码属性等值比较"><a href="#算法A2——主索引，码属性等值比较" class="headerlink" title="算法A2——主索引，码属性等值比较"></a>算法A2——主索引，码属性等值比较</h5><p>对于具有主索引的码属性的等值比较，我们可以使用索引检索到满足相应等值条件的唯一一条记录。</p>
+<ul>
+<li>Cost  &#x3D; hi * (tT + tS) +  (tT + tS) &#x3D; (hi + 1) * (tT + tS)  （hi为B+树高度）</li>
+<li>上述公式：索引查找穿越B+树的高度，再加一次I&#x2F;O取记录，每个这样的I&#x2F;O操作需要一次搜索和一次块传输。</li>
+</ul>
+<h5 id="算法A3——主索引，非码属性等值比较"><a href="#算法A3——主索引，非码属性等值比较" class="headerlink" title="算法A3——主索引，非码属性等值比较"></a>算法A3——主索引，非码属性等值比较</h5><p>检索多条记录</p>
+<ul>
+<li>记录在文件中必然是连续存储的</li>
+<li>Cost &#x3D; hi * (tT + tS) + tS + tT * b</li>
+<li>上述公式：树的每层一次搜索，第一个块的搜索，b 代表包含具有指定搜索码值的记录的磁盘块数。假定这些块是顺序存储的叶子块，并且不需要额外搜索。</li>
+</ul>
+<h5 id="算法A4——辅助索引，等值比较"><a href="#算法A4——辅助索引，等值比较" class="headerlink" title="算法A4——辅助索引，等值比较"></a>算法A4——辅助索引，等值比较</h5><ul>
+<li>如果等值条件是码属性上的，该策略可以检索到满足条件的一条记录。<ul>
+<li>Cost &#x3D;  hi * (tT + tS) +  (tT + tS) &#x3D; (hi + 1) * (tT + tS)</li>
+<li>上述公式：和A2相似。索引查找穿越树的高度，再加一次I&#x2F;O取记录，每个这样的I&#x2F;O操作需要一次搜索和一次块传输。</li>
+</ul>
+</li>
+<li>若索引字段是非码属性，则可检索到多条记录。<ul>
+<li>每个匹配的记录可能在不同的磁盘块中。</li>
+<li>Cost &#x3D; hi * (tT + tS) +  n*(tT + tS) &#x3D; (hi + n) * (tT + tS) </li>
+<li>上述公式：n是查询结果中的记录数，索引查找的代价和A3相似，但是每条记录可能在不同的块上，这需要每条记录一次搜索。如果n比较大，查询代价非常大。</li>
+</ul>
+</li>
+</ul>
+<h4 id="涉及查询范围-比较-的选择"><a href="#涉及查询范围-比较-的选择" class="headerlink" title="涉及查询范围(比较)的选择"></a>涉及查询范围(比较)的选择</h4><p>σA &lt;&#x3D; V(r) 或 σA &gt;&#x3D; V(r)的实现方法</p>
+<ul>
+<li>线性搜索</li>
+<li>按A5或A6使用索引来实现选择运算</li>
+</ul>
+<h5 id="算法A5——主索引，比较"><a href="#算法A5——主索引，比较" class="headerlink" title="算法A5——主索引，比较"></a>算法A5——主索引，比较</h5><p>A 上的记录是有序的。</p>
+<ul>
+<li>对于 σA &gt;&#x3D; V(r)，使用索引找到 &gt;&#x3D; v 的第一个元组，从这里开始顺序扫描关系。</li>
+<li>Cost &#x3D; hi * (tT + tS) + tS + tT * b</li>
+<li>上述公式：和A3非码相似。树的每层一次搜索，第一个块的搜索，b是包含具有指定搜索码的块数，假定这些块是顺序存储的叶子块，并且不需要额外搜索。</li>
+<li>对于 σA &lt;&#x3D; V(r)，只是顺序扫描关系找到 &gt; v 的第一个元组。</li>
+</ul>
+<h5 id="算法A6——辅助索引，比较"><a href="#算法A6——辅助索引，比较" class="headerlink" title="算法A6——辅助索引，比较"></a>算法A6——辅助索引，比较</h5><ul>
+<li>对于 σA &gt;&#x3D; V(r)，使用索引找到第一个 &gt;&#x3D; v 的索引项，从这里开始依次扫描索引，找到指向记录的指针。</li>
+<li>对于 σA &lt;&#x3D; V(r)，只需要扫描索引的叶子页来找到指针，直到找到第一个 &gt; v 的索引项。</li>
+<li>在这两种情况下检索记录时：<ul>
+<li>每个匹配的记录可能在不同的磁盘块中 ，每个记录需要一个 I&#x2F;O</li>
+<li>线性文件扫描代价可能会更小</li>
+</ul>
+</li>
+<li>Cost &#x3D; hi * (tT + tS) +  n * (tT + tS) &#x3D; (hi + n) * (tT + tS) </li>
+<li>上述公式：和A4非码属性查询相似。n是所取记录数，但是每条记录可能在不同的块上，这需要每条记录一次搜索。如果n比较大，查询代价非常大。</li>
+</ul>
+<h3 id="连接运算"><a href="#连接运算" class="headerlink" title="连接运算"></a>连接运算</h3><p>基于代价估算来选择合适的连接。<br>使用下面的信息作为例子：</p>
+<ul>
+<li>Student表的记录数: 5000；sc表的记录数: 10000</li>
+<li>Student表的磁盘块数: 100；sc表的磁盘块数:  400</li>
+</ul>
+<h4 id="嵌套循环连接"><a href="#嵌套循环连接" class="headerlink" title="嵌套循环连接"></a>嵌套循环连接</h4><p><img src="/images/QianTao1.png" alt="QianTao1" loading="lazy"></p>
+<ul>
+<li>r 被称为连接的外层关系，而 s 称为连接的内层关系。</li>
+<li>无需索引，并且不管连接条件是什么。</li>
+<li>代价很大，因为算法逐个检查两个关系中的每一对元组。</li>
+<li>在最坏的情况下，缓冲区只能容纳每个关系的一个数据块，这时共需 nr * bs + br 次块传输（nr为外层关系元组数量，bs为内层关系块数量），nr + br 次磁盘搜索。<ul>
+<li>对每次扫描内层关系s，我们需要一次磁盘搜索，r中的nr个元组分别需要搜索一次，所以需要nr次磁盘搜索；读取关系r一共需要br次磁盘搜索，总磁盘搜索次数为：nr + br。</li>
+</ul>
+</li>
+<li>最坏的可用内存情况下的成本估算<ul>
+<li>用 student 作为外层关系:<ul>
+<li>5000 * 400 + 100 &#x3D; 2000100 次块传输</li>
+<li>5000 + 100 &#x3D; 5100 次磁盘搜索</li>
+</ul>
+</li>
+<li>用 sc 作为外层关系： <ul>
+<li>10000 * 100 + 400 &#x3D; 1,000,400 次块传输</li>
+<li>10000 + 400 &#x3D;  10,400 次磁盘搜索</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>如果较小的关系能被放入内存中，使用它作为内层关系，这时共需 br + bs 次块传输和 2 次磁盘搜索。</li>
+<li>针对我们的案例，如果较小的关系 (student) 可以完全放入内存中，代价将是 100+400 &#x3D; 500 次块传输。</li>
+</ul>
+<h4 id="块嵌套循环连接"><a href="#块嵌套循环连接" class="headerlink" title="块嵌套循环连接"></a>块嵌套循环连接</h4><ul>
+<li>它是嵌套循环连接的一个变种，其中内层关系的每一块与外层关系的每一块对应，形成块对，在每一个块对中，一个块的每一个元组与另一个块的每一个元组形成组对，从而得到全体组对。</li>
+<li>适应于内存不能完全容纳任何一个关系时，如果我们以块的方式而不是以元组的方式处理关系，可以减少块读写次数。</li>
+<li>最坏情况：<ul>
+<li>(br * bs + br )次块传输 + 2 * br 次磁盘搜索</li>
+<li>对于外层关系中的每一个块，内层关系s的每一块只需读取一次，不需要对每一个元组读一次</li>
+</ul>
+</li>
+<li>最好的情况(内存能够容纳内层关系)<br>  (br + bs )次块传输 + 2 次磁盘搜索</li>
+<li>以student和sc为例<ul>
+<li>最坏情况：为student的每一块读取sc的所有块：<ul>
+<li>块传输：100*400+100&#x3D;40100</li>
+<li>块搜索：2*100&#x3D;200</li>
+</ul>
+</li>
+<li>最好情况：<ul>
+<li>块传输：100+400&#x3D;500</li>
+<li>块搜索：2</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h5 id="改进嵌套循环与块嵌套循环算法"><a href="#改进嵌套循环与块嵌套循环算法" class="headerlink" title="改进嵌套循环与块嵌套循环算法"></a>改进嵌套循环与块嵌套循环算法</h5><ul>
+<li>在块嵌套循环中，如果内存中有 M 块，使用 M-2 个磁盘块作为外层关系的块单元；使用剩余的两个块作为内层关系和输出的缓冲区。<ul>
+<li>Cost &#x3D; ⌈ br&#x2F;(M-2) ⌉ * bs + br 次块传输 + 2⌈ br&#x2F;(M-2) ⌉ 次磁盘搜索</li>
+</ul>
+</li>
+<li>如果等值连接中的连接属性是内层关系的码，则对每个外层关系元组，内层循环一旦找到了首条匹配元组就可以终止。</li>
+<li>使用缓冲区的剩余块，对内层循环轮流做向前、向后的扫描（使用 LRU 替换策略)。</li>
+<li>若内层循环连接属性上有索引，可以用更有效的索引查找法替代文件扫描法。</li>
+</ul>
+<h4 id="索引循环嵌套连接"><a href="#索引循环嵌套连接" class="headerlink" title="索引循环嵌套连接"></a>索引循环嵌套连接</h4><ul>
+<li>索引查找法可以替代文件扫描法，若<ul>
+<li>连接是自然连接或等值连接</li>
+<li>内层关系的连接属性上存在可用索引<ul>
+<li>可以为了计算连接而专门建立临时索引</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>对于外层关系 r 的每一个元组 tr ，可以利用索引查找满足与 tr 的连接条件的 s 中的元组。</li>
+<li>最坏的情况下: 缓冲区只能容纳关系 r 的一块和索引的一块，对于外层关系 r 的每一个元组，需要对关系s 进行索引查找。</li>
+<li>连接的时间代价:  br (tT + tS) + nr * c<ul>
+<li>c 是使用连接条件对关系 s 进行单次选择操作的代价。</li>
+</ul>
+</li>
+<li>如果两个关系 r 和 s 上均有索引时，一般把元组较少的关系作外层关系时效果较好。</li>
+</ul>
+<p><img src="/images/costEx1.png" alt="costEx1" loading="lazy"></p>
+<h4 id="归并连接"><a href="#归并连接" class="headerlink" title="归并连接"></a>归并连接</h4><ul>
+<li>在连接属性上对全部关系进行排序(如果之前并非有序的)</li>
+<li>为了连接它们，归并有序关系：<ul>
+<li>连接步骤类似于归并排序算法中的归并阶段。  </li>
+<li>主要不同在于处理连接属性上的重复值 — 每对具有相同值的连接属性的元组必须被匹配。</li>
+</ul>
+</li>
+<li>可用于计算自然连接和等值连接。</li>
+<li>每个块只需被读取一次 (假设所有连接属性是给定值的元组都被装入内存）。</li>
+<li>归并连接的代价：<ul>
+<li>br + bs 次块传输 + ⌈ br&#x2F;bb ⌉ + ⌈ bs&#x2F;bb ⌉ 次磁盘搜索 + 排序代价 （如果关系未被排序）</li>
+<li>上述公式中bb是为每个关系分配的缓冲块数量</li>
+</ul>
+</li>
+</ul>
+<h5 id="混合归并-连接"><a href="#混合归并-连接" class="headerlink" title="混合归并-连接"></a>混合归并-连接</h5><p>如果一个关系已排序，并且另一关系有一个连接属性上的 B+ 树辅助索引。</p>
+<ul>
+<li>把已排序关系和另一个关系的 B+ 树辅助索引叶结点进行归并。</li>
+<li>将该文件按照未排序关系元组的地址进行排序</li>
+<li>从而能够对相关元组按照物理存储顺序进行有效的检索，最终完成连接操作。<ul>
+<li>顺序扫描比随机查找更有效。</li>
+</ul>
+</li>
+</ul>
+<h4 id="散列连接"><a href="#散列连接" class="headerlink" title="散列连接"></a>散列连接</h4><ul>
+<li>适用于等值连接和自然连接。</li>
+<li>用同一个散列函数 h 来划分两个关系的元组。</li>
+<li>h 是将 JoinAttrs 值映射到 {0, 1, …, n} 的散列函数，其中 JoinAttrs 表示自然连接中 r 与 s 的公共属性。<ul>
+<li>r0, r1, …, rn 表示关系 r 的元组划分<ul>
+<li>每个元组 tr ∈ r 被放入划分 ri 中，其中 i &#x3D; h(tr[JoinAttrs])</li>
+</ul>
+</li>
+<li>r0,, r1. . ., rn 表示关系 s 的元组划分<ul>
+<li>每个元组 ts ∈ s 被放入划分 si,中，其中 i &#x3D; h(ts [JoinAttrs])</li>
+</ul>
+</li>
+<li>注意：在书中，ri 被表示为 Hri ，si 被表示为 Hsi ，n 被表示为 nh。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/images/SanLieJoin.png" alt="SanLieJoin" loading="lazy"></p>
+<p>关系 ri 中的元组 r 只需要与关系 si 中的元组 s 相比较，而没有必要与其他任何划分里的元组 s 相比较。</p>
+<ul>
+<li>如果一个 r 元组和一个 s 元组满足连接条件，那么它们在连接属性上就会有相同的值。</li>
+<li>如果该值经散列函数映射到 i ,则关系 r 的那个元组必在 ri 中，而关系 s 的那个元组必在 si 中。</li>
+</ul>
+<h5 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h5><p>关系 r 和 s 的散列连接计算方法：</p>
+<ul>
+<li>使用散列函数 h 划分关系 s 。当划分一个关系时，一个内存块被保留作为每个划分的输出缓冲区。</li>
+<li>类似地划分关系 r。</li>
+<li>对于每一个 i:<ul>
+<li>将 si 装入内存，并且在它的连接属性之上建立一个内存中的散列索引。这个散列索引使用与前一个 h 不同的散列函数。</li>
+<li>一个一个地从磁盘中读取 ri 的元组。使用内存散列索引，为每一个元组 tr 找到一个 si 中的匹配元组 ts 。输出它们属性值的串联值。</li>
+</ul>
+</li>
+</ul>
+<h3 id="表达式计算"><a href="#表达式计算" class="headerlink" title="表达式计算"></a>表达式计算</h3><p>计算一个完整表达式树的两种方法：</p>
+<ul>
+<li>物化:  输入一个关系或者已完成的计算，产生一个表达式的结果，在磁盘中物化它，重复该过程。</li>
+<li>流水线:  一个正在执行的操作的部分结果传送到流水线的下一个操作，使得两操作可同时进行。</li>
+<li>两种方法的代价差别很大。</li>
+</ul>
+<h4 id="物化"><a href="#物化" class="headerlink" title="物化"></a>物化</h4><ul>
+<li>物化计算:  从最底层开始，执行树中的运算，对运算的每个中间结果创建(物化，即创建临时关系)，然后用于上一层运算。</li>
+</ul>
+<p><img src="/images/WuHuaEx.png" alt="WuHuaEx" loading="lazy"></p>
+<ul>
+<li>任何情况下，物化计算都是永远适用的。</li>
+<li>将结果写入磁盘和读取它们的代价是非常大的。<ul>
+<li>当估计算法代价时，我们忽略了将结果写入磁盘的代价。</li>
+<li>总体代价  &#x3D;  单个运算代价的总和 + 将中间结果写入到磁盘的代价。</li>
+</ul>
+</li>
+<li>双缓冲技术: 使用两个缓冲区，其中一个用于连续执行算法，另一个用于写出结果。<ul>
+<li>允许 CPU 活动与 I&#x2F;O 活动并行，从而提高算法执行速度。</li>
+</ul>
+</li>
+</ul>
+<h4 id="流水线"><a href="#流水线" class="headerlink" title="流水线"></a>流水线</h4><ul>
+<li>流水线执行：同时执行多个操作，一个操作的结果传递到下一个。</li>
+<li>例如，在前面的表达式树中，不存储中间结果，直接传递元组到连接运算。</li>
+<li>比物化代价小很多，没有必要存储临时关系到磁盘。</li>
+<li>流水线并不总是可行的(有些场景不适合流水线方法)。例如，排序，散列连接。</li>
+<li>对于有效流水线，当作为输入的元组被接收时，立即使用计算算法得到输出元组。</li>
+<li>流水线执行方法<ul>
+<li>需求驱动流水线</li>
+<li>生产者驱动流水线</li>
+</ul>
+</li>
+<li>在<strong>需求驱动</strong>或<strong>消极计算</strong>中<ul>
+<li>系统不停地向位于流水线顶端的操作发出需要元组的请求。</li>
+<li>为了输出自己的下一个元组，每个操作发出请求以获得来自孩子操作的下一个元组。</li>
+<li>迭代算子维护两次调用之间的执行“状态”，使得下一个 next() 调用请求可以获取下面的结果元组。</li>
+</ul>
+</li>
+<li>在<strong>生产者驱动</strong>或<strong>积极</strong>流水线中<ul>
+<li>各操作并不等待元组请求，而是积极地产生元组。<ul>
+<li>在两个操作之间创建一个缓冲区，子操作将元组放入缓冲区，父操作从缓冲区中提取元组并移除它。</li>
+<li>如果缓冲区已满，子操作将一直等待，直到缓冲区产生足够的空间 ，此时该子操作将产生更多元组，直到缓冲区再次满为止。</li>
+</ul>
+</li>
+<li>只有当一个输出缓冲区已满，或一个输入缓冲区已空，需要更多的输入元组来产生输出元组时，系统才需要在各操作之间切换。</li>
+</ul>
+</li>
+<li>备用名称: 流水线的<strong>推</strong>和<strong>拉</strong>模式。</li>
+</ul>
+<h1 id="查询优化"><a href="#查询优化" class="headerlink" title="查询优化"></a>查询优化</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>查询优化就是从多个可能的策略中，找出最有效的查询执行计划的一种处理过程。</p>
+<ul>
+<li><p>优化一方面可以在关系代数级别发生。另一方面是为处理查询选择一个详细的策略，比如执行算法、选择索引等。</p>
+</li>
+<li><p>选择一个给定查询的执行方法：</p>
+<ul>
+<li>等价表达式</li>
+<li>每个运算有不同算法</li>
+<li>关系代数表达式</li>
+</ul>
+</li>
+<li><p>例子：查询music学院老师的姓名和教授的课程名称</p>
+<ul>
+<li>∏name,title(σdname &#x3D;‘music’(instructor ⋈ (teaches ⋈ (course))))</li>
+</ul>
+</li>
+<li><p>左侧的表达式树将产生很大的中间关系，instructor  ⋈ (teaches ⋈ (course)，但是我们只对music学院的教师感兴趣，因此，优化后的表达式树变成右侧的。<br><img src="/images/YouHuaEx1.png" alt="YouHuaEx1" loading="lazy"></p>
+</li>
+<li><p>给定一个关系代数表达式，查询优化器的任务是产生一个查询执行计划，该计划能获得与原关系表达式相同的结果，并且得到结果集的执行代价最小。</p>
+</li>
+</ul>
+<p><img src="/images/YouHuaEx2.png" alt="YouHuaEx2" loading="lazy"></p>
+<ul>
+<li>基于代价的优化的步骤：<ul>
+<li>使用<strong>等价规则</strong>产生逻辑上的等价表达式。</li>
+<li>注解结果表达式来得到替代查询计划。</li>
+<li>基于<strong>代价估计</strong>选择代价最小的计划。</li>
+</ul>
+</li>
+<li>计划代价的估计基于：<ul>
+<li>关系的统计信息(例如：oracle中的v$sqlarea，v$sysstat)。<ul>
+<li>元组数，一个属性的不同取值的数量。</li>
+</ul>
+</li>
+<li>用于中间结果的统计估计。<ul>
+<li>为了计算复杂表达式的代价。</li>
+</ul>
+</li>
+<li>算法的代价公式，使用统计来计算。</li>
+</ul>
+</li>
+</ul>
+<h2 id="等价规则"><a href="#等价规则" class="headerlink" title="等价规则"></a>等价规则</h2><p><img src="/images/DengJiaRule.png" alt="DengJiaRule" loading="lazy"><br><img src="/images/DengJiaRule2.png" alt="DengJiaRule2" loading="lazy"><br><img src="/images/DengJiaRule3.png" alt="DengJiaRule3" loading="lazy"><br><img src="/images/DengJiaRule4.png" alt="DengJiaRule4" loading="lazy"><br><img src="/images/DengJiaRule5.png" alt="DengJiaRule5" loading="lazy"><br><img src="/images/DengJiaRule6.png" alt="DengJiaRule6" loading="lazy"></p>
+<ul>
+<li>尽可能早地执行选择操作以减小被连接的关系的大小。</li>
+<li>尽可能早地执行投影操作以减小被连接的关系的大小。</li>
+</ul>
+<h2 id="连接的次序"><a href="#连接的次序" class="headerlink" title="连接的次序"></a>连接的次序</h2><ul>
+<li>对于关系 r1 ，r2 和 r3 <ul>
+<li>(r1 ⋈r2) ⋈r3  &#x3D; r1 ⋈(r2 ⋈r3 ) ———— (连接的结合律)</li>
+</ul>
+</li>
+<li>如果 r2 ⋈ r3是较大的， r1 ⋈ r2 是小的，选择 (r1 ⋈r2) ⋈r3  ———— 使得可以计算和存储一个较小的临时关系</li>
+</ul>
+<h2 id="代价估计"><a href="#代价估计" class="headerlink" title="代价估计"></a>代价估计</h2><p>一个操作的代价依赖于它的输入的大小和其他统计信息。</p>
+<h3 id="表达式结果集统计大小的估计"><a href="#表达式结果集统计大小的估计" class="headerlink" title="表达式结果集统计大小的估计"></a>表达式结果集统计大小的估计</h3><ul>
+<li>目录信息：<ul>
+<li>nr: 关系 r 的元组数</li>
+<li>br: 包含关系 r 中元组的磁盘块数</li>
+<li>lr: 关系 r 中每个元组的字节数</li>
+<li>fr: 关系 r 的块因子 —— 即一个磁盘块能容纳的关系 r 中元组的个数</li>
+<li>V(A, r): 关系 r 中属性 A 中出现的非重复值个数，该值与 ∏A(r) 的大小相同</li>
+<li>假设关系 r 的元组物理上存储于一个文件中，则该等式成立：br &#x3D; ⌈ nr&#x2F;fr ⌉</li>
+</ul>
+</li>
+<li>关于索引的统计信息，比如B+树的高度和索引中叶节点的页数，也保存在目录中。</li>
+<li>每次修改数据库中的数据时，必须同时更新统计信息。</li>
+</ul>
+<h3 id="直方图"><a href="#直方图" class="headerlink" title="直方图"></a>直方图</h3><p>大多数数据库将每个属性的取值分布另存为一张直方图，如果没有直方图信息，优化器将假设数据分布是均匀的。</p>
+<ul>
+<li>一个直方图只占用很少的空间，因此不同的属性上的直方图可以存储在系统目录里。</li>
+<li>等宽直方图：把取值范围分成相等大小的区间。</li>
+<li>等深直方图：调整区间分解，以使落入每个区间的取值个数相等。</li>
+</ul>
+<h3 id="选择运算结果大小的估计"><a href="#选择运算结果大小的估计" class="headerlink" title="选择运算结果大小的估计"></a>选择运算结果大小的估计</h3><ul>
+<li>σA&#x3D;v(r)<ul>
+<li>nr &#x2F; V(A,r) : 满足选择的记录数(假设关系r中属性A的取值是平均分布的)</li>
+</ul>
+</li>
+<li>σA &lt;&#x3D; V(r) ( σA &gt;&#x3D; V(r) 的例子是对称的)<ul>
+<li>c 表示满足条件的元组的估计数 </li>
+<li>如果 min(A,r) 和 max(A,r) 可存储到目录上<ul>
+<li>若 v &lt; min(A,r)，c &#x3D; 0  ( min(A,r) 代表关系r中属性A最小的取值)</li>
+<li>若 v &gt; max(A,r)，c &#x3D; nr ( max(A,r) 代表关系r中属性A最大的取值)</li>
+<li>否则，c&#x3D;nr * (v-min(A,r))&#x2F;(max(A,r)-min(A,r))</li>
+</ul>
+</li>
+<li>如果存在直方图，可以得到更精确的估计</li>
+<li>不存在统计信息时，c 被假设为 nr &#x2F; 2</li>
+</ul>
+</li>
+</ul>
+<h3 id="复杂选择运算结果的大小估计"><a href="#复杂选择运算结果的大小估计" class="headerlink" title="复杂选择运算结果的大小估计"></a>复杂选择运算结果的大小估计</h3><ul>
+<li>条件θi的<strong>选中率</strong>是关系r上一个元组满足θi的概率<ul>
+<li>如果 si 是关系 r 中满足条件的元组数，选中率  θi &#x3D; si &#x2F;nr</li>
+</ul>
+</li>
+<li>合取:  σ θ1 ∩ θ2 ∩ … ∩ θn (r) ——&gt; nr * (s1<em>s2</em>…*sn)&#x2F;nr^n</li>
+<li>析取： σ θ1 ∪ θ2 ∪ … ∪ θn (r) ——&gt; nr * (1-(1-s1&#x2F;nr) * (1-s2&#x2F;nr) * … * (1-sn&#x2F;nr))</li>
+<li>取反：σ┐θ(r) ——&gt; nr-size(σθ(r))\</li>
+</ul>
+<h2 id="执行计划选择"><a href="#执行计划选择" class="headerlink" title="执行计划选择"></a>执行计划选择</h2><ul>
+<li>为每个操作独立地选择代价最小的算法可能不会产生最佳的整体算法。<ul>
+<li>归并连接可能比散列连接代价更大，但可提供一个排序的输出，从而降低外层聚合的代价。</li>
+<li>嵌套循环连接可以为使用流水线技术提供机会。</li>
+</ul>
+</li>
+<li>实际的查询优化器合并了以下两大方法中的元素：<ul>
+<li>搜索所有的计划，基于代价选择最佳的计划。</li>
+<li>使用启发式方法选择计划。</li>
+</ul>
+</li>
+</ul>
+<h2 id="基于代价的优化"><a href="#基于代价的优化" class="headerlink" title="基于代价的优化"></a>基于代价的优化</h2><p>从给定查询等价的所有查询计划执行空间进行搜索，并选择估计代价最小的一个。</p>
+<ul>
+<li>对于复杂查询来说，搜索整个可能的空间代价太高，也有许多优化器采用启发式方法降低查询优化的代价，同时承担找不到最有计划的潜在风险。</li>
+</ul>
+<h3 id="代价优化"><a href="#代价优化" class="headerlink" title="代价优化"></a>代价优化</h3><p>考虑为表达式 r1 ⋈ r2 ⋈ … ⋈ rn 寻找最佳连接顺序</p>
+<ul>
+<li>上述表达式有 (2(n – 1))!&#x2F;(n – 1)! 个不同的连接顺序，对于n &#x3D; 7, 此数变为 665280，对于 n &#x3D; 10, 此数大于 176 亿!</li>
+<li>不必产生所有连接顺序。使用动态规划，{r1, r2, . . . rn} 的任意子集的代价最小的连接顺序只计算一次，并存储起来，以备将来使用。</li>
+<li>用动态规划优化稠密树的时间复杂度是 O(3^n) <ul>
+<li>当 n &#x3D; 10 时，这个数字是 59000 而不是 176 亿!</li>
+</ul>
+</li>
+<li>空间复杂度是 O(2^n)</li>
+<li>为有 n 个关系的一组关系找到最好的左深连接树:<ul>
+<li>考虑作为右手侧输入的一个关系的 n 中选择。其他关系作为左手侧输入。</li>
+<li>修改优化算法：<ul>
+<li>不用“for each 使 S1 ≠ S 的 S 的非空子集 S1 ”</li>
+<li>使用“for each S 上的关系 r ，令 S1 &#x3D; S – r ”</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>如果只有左深树被考虑，找到最佳连接顺序的时间复杂度是 O(n*2n)，空间复杂度仍是 O(2n) 。</li>
+<li>基于代价的优化是昂贵的，但是对于大型数据库上的查询是值得的 (典型的查询 n 都很小, 通常 &lt; 10)</li>
+</ul>
+<h4 id="左深连接树"><a href="#左深连接树" class="headerlink" title="左深连接树"></a>左深连接树</h4><p>在左深连接树中，每个连接右手侧的输入是一个已存储的关系， 不是一个中间连接的结果。<br><img src="/images/LeftDeepTree.png" alt="LeftDeepTree" loading="lazy"></p>
+<h2 id="启发式优化"><a href="#启发式优化" class="headerlink" title="启发式优化"></a>启发式优化</h2><ul>
+<li>基于代价的优化的缺点是优化本身的代价，即使动态规划也如此。</li>
+<li>查询优化器使用启发式方法来减小优化代价。</li>
+<li>启发式优化通过使用一系列规则转化查询树，这通常（但不是在所有情况下）能改善执行性能。<ul>
+<li>尽早执行选择运算 (减少元组数目)</li>
+<li>尽早执行投影运算 (减少属性数目)</li>
+<li>在其他类似运算之前，执行能对关系进行最大限制的选择和投影运算（例如，能得到最少的结果的运算）</li>
+<li>有些系统只使用启发式方法，其他的将启发式方法和基于成本的优化相结合</li>
+</ul>
+</li>
+</ul>
+<h2 id="查询优化器"><a href="#查询优化器" class="headerlink" title="查询优化器"></a>查询优化器</h2><ul>
+<li>许多优化器只考虑左深连接顺序<ul>
+<li>使用启发式规则在查询树中对选择和投影进行下推。</li>
+<li>减少优化的复杂性，生成适合流水线执行的计划。</li>
+</ul>
+</li>
+<li>一些版本的 Oracle 的启发式优化——反复选择“最佳的”关系参加下一个连接<ul>
+<li>从 n 个执行计划的出发点开始，选择最好的一个。</li>
+</ul>
+</li>
+<li>SQL 的复杂性使查询优化变得复杂。例如，嵌套子查询。</li>
+<li>一些查询优化器整合启发式选择和替代访问方法的生成<ul>
+<li>常用的方法：<ul>
+<li>启发式重写嵌套块结构和聚集</li>
+<li>其次是对每个块通过基于代价的连接顺序进行优化</li>
+</ul>
+</li>
+<li>一些优化器 (例如，SQL Server) 将转换应用于整个查询，并且不依赖于块结构</li>
+<li>对于提早停止优化的优化代价预算(如果计划代价低于优化代价)</li>
+<li>对于重用以前的计算计划的计划缓存(如果查询被重新提交)。即使在查询中有不同的常数。</li>
+</ul>
+</li>
+<li>即使使用启发式方法，基于代价的查询优化也会造成相当大的代价。但是相对于代价巨大的查询是值得的，对每个低代价的查询，优化器经常使用简单的启发式方法，而对代价更大的查询执行穷举。</li>
+</ul>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="Donate" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-hand-coin-line"></use></svg></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>Orlando Chen</li><li class="post-copyright-link"><strong>Post link: </strong><a href="https://orlando-chen.github.io/2022/06/24/Query/" title="查询处理与优化">https://orlando-chen.github.io/2022/06/24/Query/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> unless otherwise stated.</li></ul></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2022/06/25/Transactions/" rel="prev" title="事务"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-left-s-line"></use></svg><span class="post-nav-text">事务</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/06/23/Index/" rel="next" title="索引"><span class="post-nav-text">索引</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2022 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> Orlando Chen</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v6.1.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.9.0</span></div></footer><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a></div></body></html>

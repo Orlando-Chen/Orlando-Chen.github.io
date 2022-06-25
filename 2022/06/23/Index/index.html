@@ -1,0 +1,431 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Orlando Chen"><meta name="copyright" content="Orlando Chen"><meta name="generator" content="Hexo 6.1.0"><meta name="theme" content="hexo-theme-yun"><title>索引 | Orlando的窝</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/star-markdown-css@0.2.4/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="//at.alicdn.com/t/font_1140697_dxory92pb0h.js" async></script><script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/mini.global.js"></script><script src="https://cdn.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"orlando-chen.github.io","root":"/","title":"CYFの小破站","version":"1.9.0","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms"},"anonymous_image":"https://cdn.jsdelivr.net/gh/YunYouJun/cdn/img/avatar/none.jpg","say":{"api":"https://v1.hitokoto.cn","hitokoto":true},"fireworks":{"colors":null},"vendors":{"darken":"https://cdn.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><meta name="description" content="文件与记录的组织概述 数据库被映射到多个不同的文件。 一个文件在逻辑上组织成为记录的一个序列。 一个记录是多个字段的序列。 一种实现方法： 假设记录是定长的。 每个文件都只有一种特定类型的记录。 不同的文件被用于不同的关系。 这种方法容易实现，后面将会考虑变长的记录。   每个文件分成定长的存储单元，称作块(block)。块是存储分配和数据传输的基本单元。 大多数数据库默认使用4KB(或者8KB)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="索引">
+<meta property="og:url" content="https://orlando-chen.github.io/2022/06/23/Index/index.html">
+<meta property="og:site_name" content="Orlando的窝">
+<meta property="og:description" content="文件与记录的组织概述 数据库被映射到多个不同的文件。 一个文件在逻辑上组织成为记录的一个序列。 一个记录是多个字段的序列。 一种实现方法： 假设记录是定长的。 每个文件都只有一种特定类型的记录。 不同的文件被用于不同的关系。 这种方法容易实现，后面将会考虑变长的记录。   每个文件分成定长的存储单元，称作块(block)。块是存储分配和数据传输的基本单元。 大多数数据库默认使用4KB(或者8KB)">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://orlando-chen.github.io/images/PageS.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/FuZhuIndex.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/ChouMi.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/DuoJiIndex.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/BTreeIndex.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/LeafNode.png">
+<meta property="og:image" content="https://orlando-chen.github.io/images/SanLieIndex.png">
+<meta property="article:published_time" content="2022-06-23T12:02:09.220Z">
+<meta property="article:modified_time" content="2022-06-24T14:53:55.462Z">
+<meta property="article:author" content="Orlando Chen">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://orlando-chen.github.io/images/PageS.png"><script>(function() {
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script></head><body><script defer src="https://cdn.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="Table of Contents"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-list-ordered"></use></svg></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="Overview"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-passport-line"></use></svg></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Orlando Chen"><img width="96" loading="lazy" src="/images/avatar.png" alt="Orlando Chen"><span class="site-author-status" title="Wish you a good day!">🦄</span></a><div class="site-author-name"><a href="/about/">Orlando Chen</a></div><span class="site-name">Orlando的窝</span><sub class="site-subtitle">修狗SayHi!</sub><div class="site-description">落俗不可避免</div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="Home"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-home-4-line"></use></svg></span></a><div class="site-state-item"><a href="/archives/" title="Archives"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-archive-line"></use></svg></span><span class="site-state-item-count">16</span></a></div><div class="site-state-item"><a href="/categories/" title="Categories"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-folder-2-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><div class="site-state-item"><a href="/tags/" title="Tags"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-price-tag-3-line"></use></svg></span><span class="site-state-item-count">0</span></a></div><a class="site-state-item hty-icon-button" target="_blank" rel="noopener" href="https://yun.yunyoujun.cn" title="文档"><span class="site-state-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-settings-line"></use></svg></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="/atom.xml" title="RSS" target="_blank" style="color:orange"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-rss-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" title="QQ" target="_blank" style="color:#12B7F5"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-qq-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/Orlando-Chen" title="GitHub" target="_blank" style="color:#6e5494"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-github-line"></use></svg></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://music.163.com/#/user/home?id=252444264" title="网易云音乐" target="_blank" style="color:#C20C0C"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-netease-cloud-music-line"></use></svg></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-genderless-line"></use></svg></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-contrast-2-line"></use></svg></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E4%B8%8E%E8%AE%B0%E5%BD%95%E7%9A%84%E7%BB%84%E7%BB%87"><span class="toc-number">1.</span> <span class="toc-text">文件与记录的组织</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E9%95%BF%E8%AE%B0%E5%BD%95"><span class="toc-number">1.2.</span> <span class="toc-text">定长记录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%98%E9%95%BF%E8%AE%B0%E5%BD%95"><span class="toc-number">1.3.</span> <span class="toc-text">变长记录</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%A7%BD%E7%9A%84%E9%A1%B5%E7%BB%93%E6%9E%84"><span class="toc-number">1.3.1.</span> <span class="toc-text">分槽的页结构</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A0%86%E6%96%87%E4%BB%B6"><span class="toc-number">1.4.</span> <span class="toc-text">堆文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A1%BA%E5%BA%8F%E6%96%87%E4%BB%B6%E7%BB%84%E7%BB%87"><span class="toc-number">1.5.</span> <span class="toc-text">顺序文件组织</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C"><span class="toc-number">1.5.1.</span> <span class="toc-text">操作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%93%88%E5%B8%8C%E6%96%87%E4%BB%B6"><span class="toc-number">1.6.</span> <span class="toc-text">哈希文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%A1%A8%E8%81%9A%E7%B0%87%E6%96%87%E4%BB%B6%E7%BB%84%E7%BB%87"><span class="toc-number">1.7.</span> <span class="toc-text">多表聚簇文件组织</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8A%A3%E5%8A%BF"><span class="toc-number">1.7.1.</span> <span class="toc-text">优劣势</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%AD%97%E5%85%B8%E5%AD%98%E5%82%A8"><span class="toc-number">2.</span> <span class="toc-text">数据字典存储</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%86%B2%E5%8C%BA%E6%9B%BF%E6%8D%A2%E7%AD%96%E7%95%A5"><span class="toc-number">2.1.</span> <span class="toc-text">缓冲区替换策略</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95"><span class="toc-number">3.</span> <span class="toc-text">索引</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">3.1.</span> <span class="toc-text">基本概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E8%AF%84%E4%BB%B7%E6%8C%87%E6%A0%87"><span class="toc-number">3.2.</span> <span class="toc-text">索引评价指标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E7%B1%BB%E5%9E%8B"><span class="toc-number">3.3.</span> <span class="toc-text">索引类型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%BA%E5%BA%8F%E7%B4%A2%E5%BC%95"><span class="toc-number">3.3.1.</span> <span class="toc-text">顺序索引</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BB%E7%B4%A2%E5%BC%95"><span class="toc-number">3.3.1.1.</span> <span class="toc-text">主索引</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BE%85%E5%8A%A9%E7%B4%A2%E5%BC%95"><span class="toc-number">3.3.1.2.</span> <span class="toc-text">辅助索引</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A8%A0%E5%AF%86%E7%B4%A2%E5%BC%95%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.1.3.</span> <span class="toc-text">稠密索引文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A8%80%E7%96%8F%E7%B4%A2%E5%BC%95%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.1.4.</span> <span class="toc-text">稀疏索引文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%A8%A0%E5%AF%86%E4%B8%8E%E7%A8%80%E7%96%8F%E7%9A%84%E6%AF%94%E8%BE%83"><span class="toc-number">3.3.1.5.</span> <span class="toc-text">稠密与稀疏的比较</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E7%BA%A7%E7%B4%A2%E5%BC%95"><span class="toc-number">3.3.2.</span> <span class="toc-text">多级索引</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E7%A0%81%E7%B4%A2%E5%BC%95"><span class="toc-number">3.3.3.</span> <span class="toc-text">多码索引</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E9%A1%BA%E5%BA%8F%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.4.</span> <span class="toc-text">索引顺序文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-%E6%A0%91%E7%B4%A2%E5%BC%95%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.5.</span> <span class="toc-text">B+树索引文件</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#B-%E6%A0%91%E7%BB%93%E7%82%B9%E7%BB%93%E6%9E%84"><span class="toc-number">3.3.5.1.</span> <span class="toc-text">B+树结点结构</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#B-%E6%A0%91%E7%9A%84%E5%8F%B6%E5%AD%90%E7%BB%93%E7%82%B9"><span class="toc-number">3.3.5.2.</span> <span class="toc-text">B+树的叶子结点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#B-%E6%A0%91%E7%9A%84%E9%9D%9E%E5%8F%B6%E7%BB%93%E7%82%B9"><span class="toc-number">3.3.5.3.</span> <span class="toc-text">B+树的非叶结点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%A3%E5%88%97%E7%B4%A2%E5%BC%95"><span class="toc-number">3.3.6.</span> <span class="toc-text">散列索引</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%A3%E5%88%97%E6%A1%B6"><span class="toc-number">3.3.6.1.</span> <span class="toc-text">散列桶</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%A3%E5%88%97%E5%87%BD%E6%95%B0"><span class="toc-number">3.3.6.2.</span> <span class="toc-text">散列函数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%9D%99%E6%80%81%E6%95%A3%E5%88%97%E7%9A%84%E4%B8%8D%E8%B6%B3"><span class="toc-number">3.3.6.3.</span> <span class="toc-text">静态散列的不足</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E6%95%A3%E5%88%97"><span class="toc-number">3.3.6.4.</span> <span class="toc-text">动态散列</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E6%93%8D%E4%BD%9C"><span class="toc-number">3.4.</span> <span class="toc-text">索引操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B4%A2%E5%BC%95%E6%9B%B4%E6%96%B0"><span class="toc-number">3.4.1.</span> <span class="toc-text">索引更新</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8F%92%E5%85%A5"><span class="toc-number">3.4.1.1.</span> <span class="toc-text">插入</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8D%95%E7%BA%A7%E7%B4%A2%E5%BC%95%E6%8F%92%E5%85%A5"><span class="toc-number">3.4.1.1.1.</span> <span class="toc-text">单级索引插入</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%A4%9A%E7%BA%A7%E7%B4%A2%E5%BC%95%E6%8F%92%E5%85%A5"><span class="toc-number">3.4.1.1.2.</span> <span class="toc-text">多级索引插入</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A0%E9%99%A4"><span class="toc-number">3.4.1.2.</span> <span class="toc-text">删除</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8E%9F%E5%88%99"><span class="toc-number">3.5.</span> <span class="toc-text">建立索引的原则</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95"><span class="toc-number">3.6.</span> <span class="toc-text">位图索引</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="https://orlando-chen.github.io/2022/06/23/Index/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Orlando Chen"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Orlando的窝"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">索引</h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-line"></use></svg></span> <time title="Created: 2022-06-23 20:02:09" itemprop="dateCreated datePublished" datetime="2022-06-23T20:02:09+08:00">2022-06-23</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-calendar-2-line"></use></svg></span> <time title="Modified: 2022-06-24 22:53:55" itemprop="dateModified" datetime="2022-06-24T22:53:55+08:00">2022-06-24</time></div><div class="post-classify"></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="文件与记录的组织"><a href="#文件与记录的组织" class="headerlink" title="文件与记录的组织"></a>文件与记录的组织</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><ul>
+<li>数据库被映射到多个不同的文件。</li>
+<li>一个文件在逻辑上组织成为记录的一个序列。</li>
+<li>一个记录是多个字段的序列。</li>
+<li>一种实现方法：<ul>
+<li>假设记录是定长的。</li>
+<li>每个文件都只有一种特定类型的记录。</li>
+<li>不同的文件被用于不同的关系。</li>
+<li>这种方法容易实现，后面将会考虑变长的记录。</li>
+</ul>
+</li>
+<li>每个文件分成定长的存储单元，称作块(block)。块是存储分配和数据传输的基本单元。</li>
+<li>大多数数据库默认使用4KB(或者8KB)的块。数据库允许修改块的大小。</li>
+<li>一个块包含很多记录，一个块包含的确切的记录集合是由使用的物理数据组织形式所决定的。</li>
+<li>一般假定没有记录比块更大，这个假定对于大多数数据处理应用都是现实的。</li>
+<li>要求每条记录包含在单个块中，这个限定简化并加速数据项访问。</li>
+</ul>
+<h2 id="定长记录"><a href="#定长记录" class="headerlink" title="定长记录"></a>定长记录</h2><ul>
+<li>一种简单实现方法<ul>
+<li>从字节n * (i-1)开始存储记录i， n是每个记录的长度</li>
+</ul>
+</li>
+<li>上述存放方式的缺点：<ul>
+<li>访问记录很容易，但是记录可能会分布在不同的块上<ul>
+<li>修改约束：不允许记录跨越块的边界</li>
+</ul>
+</li>
+<li>删除记录困难：<ul>
+<li>删除记录所占的空间必须由文件的其他记录来填充，或者我们自己必须用一种方法标记删除的记录，使得它可以被忽略</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>删除记录i的3种选择<ul>
+<li>移动记录 i+1, . . ., n 到 i, . . . , n-1</li>
+<li>移动记录 n 到 i</li>
+<li>不移动记录， 但是链接所有的空闲记录到一个 free list</li>
+</ul>
+</li>
+</ul>
+<h2 id="变长记录"><a href="#变长记录" class="headerlink" title="变长记录"></a>变长记录</h2><ul>
+<li>可变长度的记录的几种方式：<ul>
+<li>存储在一个文件中的记录有多个记录类型</li>
+<li>记录类型允许记录中某些字段值的长度可变(如：varchar)</li>
+</ul>
+</li>
+</ul>
+<h3 id="分槽的页结构"><a href="#分槽的页结构" class="headerlink" title="分槽的页结构"></a>分槽的页结构</h3><p><img src="/images/PageS.png" alt="PageS" loading="lazy"></p>
+<ul>
+<li>分槽的页结构一般用于在块中组织记录。</li>
+<li>分槽页页头，在每个块的块头(此处“页”&#x3D;“块”)<ul>
+<li>记录条目的个数</li>
+<li>块中空闲空间的末尾处</li>
+<li>一个包含每条记录位置和大小的条目组成的数组</li>
+</ul>
+</li>
+<li>可以将记录在一页内移动以保证记录之间没有空闲的空间，则数组中信息也要更新。</li>
+<li>实际记录从块的尾部开始排列。</li>
+<li>块中空闲空间是连续的，在块头数组的最后一个条目和第一条记录之间。</li>
+<li>如果插入一条记录，在空闲的尾部给这条记录分配空间，并且将包含这条记录大小和位置的条目添加到块头中。</li>
+<li>如果一条记录被删除，它所占用的空间被释放，并且它的条目被设置成删除状态，块中被删除记录之前的记录被移动，是的由此删除产生的空闲空间被重用，并且所有的空闲空间在块头数组的最后一个条目和第一条记录之间。</li>
+<li>块头中的空闲末尾指针也要做适当的调整。</li>
+</ul>
+<h2 id="堆文件"><a href="#堆文件" class="headerlink" title="堆文件"></a>堆文件</h2><p>一个记录可以放在文件中任何地方只要有有足够的空间，记录没有顺序。</p>
+<h2 id="顺序文件组织"><a href="#顺序文件组织" class="headerlink" title="顺序文件组织"></a>顺序文件组织</h2><p>记录根据“搜索码”的值顺序存储。</p>
+<ul>
+<li>适用于需要对整个文件进行​​顺序处理的应用程序。</li>
+<li>记录在搜索码上排序。</li>
+</ul>
+<h3 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h3><ul>
+<li>删除 – 使用指针链</li>
+<li>插入 –找到记录将要被插入的位置<ul>
+<li>如果有空闲空间则插入</li>
+<li>如果没有空闲空间，分配一个溢出块，插入</li>
+<li>上面两种情况，指针链都必须更新</li>
+</ul>
+</li>
+<li>需要时对文件进行重组以保持顺序</li>
+</ul>
+<h2 id="哈希文件"><a href="#哈希文件" class="headerlink" title="哈希文件"></a>哈希文件</h2><p>在每条记录的某些属性上计算一个哈希函数，哈希函数的结果确定了记录应放到文件的哪一块中。</p>
+<h2 id="多表聚簇文件组织"><a href="#多表聚簇文件组织" class="headerlink" title="多表聚簇文件组织"></a>多表聚簇文件组织</h2><ul>
+<li>使用多表聚簇文件组织，一个文件可存储几个关系。</li>
+<li>每个关系的记录可被存储在一个单独的文件中：<ul>
+<li>在多表聚簇文件组织中一个文件可以存储多个不同关系的记录。</li>
+<li>动机: 将相关记录存储在同一个块上从而减少I&#x2F;O。</li>
+</ul>
+</li>
+</ul>
+<h3 id="优劣势"><a href="#优劣势" class="headerlink" title="优劣势"></a>优劣势</h3><ul>
+<li>有利于处理包含department、instructor条件的查询，有利于查询一个department 中有哪些instructor。</li>
+<li>不利于只与department有关的查询。</li>
+<li>导致记录长度是可变的。</li>
+<li>对于一个确定的关系可以用指针链连接记录。</li>
+</ul>
+<h1 id="数据字典存储"><a href="#数据字典存储" class="headerlink" title="数据字典存储"></a>数据字典存储</h1><p>数据字典：也称为系统目录，用于存储元数据，即关于数据的数据。</p>
+<ul>
+<li>关系的有关信息<ul>
+<li>关系的名字</li>
+<li>每个关系中属性的名字、类型和长度</li>
+<li>视图的名字和视图的定义</li>
+<li>完整性约束</li>
+</ul>
+</li>
+<li>用户和账号信息，包括密码</li>
+<li>统计和描述数据(例如：oracle中的v$sqlarea，v$sysstat)等<ul>
+<li>每个关系中元组的总数</li>
+<li>每个关系使用的存储方法(聚集或者非聚集等)</li>
+</ul>
+</li>
+<li>文件的组织信息<ul>
+<li>关系的存储组织(顺序&#x2F;哈希&#x2F;…)</li>
+<li>关系的存储位置</li>
+</ul>
+</li>
+<li>索引信息</li>
+</ul>
+<h2 id="缓冲区替换策略"><a href="#缓冲区替换策略" class="headerlink" title="缓冲区替换策略"></a>缓冲区替换策略</h2><ul>
+<li>数据字典尽量不被移出主存</li>
+<li>索引尽量不被移出主存</li>
+<li>大多数数据库系统都是用LRU策略</li>
+<li>块替换策略的其他影响因素，比如并发的用户请求</li>
+</ul>
+<h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><ul>
+<li>索引机制用于加快访问所需数据的速度。</li>
+<li><strong>搜索码</strong>：用于在文件中查找记录的属性或属性集。</li>
+<li>索引文件由如下形式的记录(被称为索引项)组成<table>
+<thead>
+<tr>
+<th align="center">search-key</th>
+<th align="center">pointer</th>
+</tr>
+</thead>
+</table>
+</li>
+<li>索引文件通常远小于原始文件。</li>
+</ul>
+<h2 id="索引评价指标"><a href="#索引评价指标" class="headerlink" title="索引评价指标"></a>索引评价指标</h2><ul>
+<li>能有效支持的访问类型 <ul>
+<li>具有特定属性值的记录。</li>
+<li>或者属性值基于某个特定范围内的记录。</li>
+</ul>
+</li>
+<li>访问时间<ul>
+<li>在查询中使用该技术找到一个特定数据项或者数据项集合所需的时间。</li>
+</ul>
+</li>
+<li>更新时间<ul>
+<li>增删改一个新数据项所需要的时间，包括找到增删改这个新数据项的正确位置所需的时间，以及更新索引结构所需的时间。</li>
+</ul>
+</li>
+<li>空间开销<ul>
+<li>索引结构所占的额外存储空间，如果存储索引结构的额外空间大小适度，通常牺牲一定的空间代价来换取性能的提高是值得的。</li>
+</ul>
+</li>
+</ul>
+<h2 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h2><h3 id="顺序索引"><a href="#顺序索引" class="headerlink" title="顺序索引"></a>顺序索引</h3><ul>
+<li>在一个顺序索引中，索引项按照搜索码值的排序顺序存储，并将每个搜索码的与包含该搜索码的记录关联起来。</li>
+</ul>
+<h4 id="主索引"><a href="#主索引" class="headerlink" title="主索引"></a>主索引</h4><p>包含记录的文件按照某个搜索码指定的顺序排序，那么该搜索码对应的索引称为主索引。</p>
+<ul>
+<li>也被称为聚集索引。</li>
+<li>主索引的搜索码可以建立在主码上也可以建立在非主码属性上。</li>
+</ul>
+<h4 id="辅助索引"><a href="#辅助索引" class="headerlink" title="辅助索引"></a>辅助索引</h4><p>搜索码指定的顺序与文件中记录的物理顺序不同的索引。</p>
+<ul>
+<li>也称为非聚集索引。</li>
+<li>实现：索引记录指向一个包含所有具有特定搜索码值的实际记录的指针的<br>桶，另外辅助索引必须是稠密索引。</li>
+</ul>
+<p><img src="/images/FuZhuIndex.png" alt="FuZhuIndex" loading="lazy"></p>
+<h4 id="稠密索引文件"><a href="#稠密索引文件" class="headerlink" title="稠密索引文件"></a>稠密索引文件</h4><p>稠密索引：在稠密索引中，文件中的每个搜索码值都有一个索引项。<br><img src="/images/ChouMi.png" alt="ChouMi" loading="lazy"></p>
+<h4 id="稀疏索引文件"><a href="#稀疏索引文件" class="headerlink" title="稀疏索引文件"></a>稀疏索引文件</h4><ul>
+<li>稀疏索引：<ul>
+<li>在稀疏索引中，只为搜索码的某些值建立索引项。</li>
+<li>只有索引是主索引(聚集索引)时才能使用稀疏索引。</li>
+</ul>
+</li>
+<li>为了定位一个搜索码值为 K 的记录，我们需要:<ul>
+<li>找到搜索码值 &lt; K 的最大索引项。</li>
+<li>从该索引项所指向的记录开始，沿着文件中的指针查找，直到找到所需记录为止。</li>
+</ul>
+</li>
+</ul>
+<h4 id="稠密与稀疏的比较"><a href="#稠密与稀疏的比较" class="headerlink" title="稠密与稀疏的比较"></a>稠密与稀疏的比较</h4><ul>
+<li>稀疏索引所占空间较小，更有可能常驻内存，插入和删除时所需的维护开销也较小。</li>
+<li>稀疏索引定位一条记录时，通常比稠密索引更慢。</li>
+<li>为文件中的每个块建一个索引项的稀疏索引是一个很好的折中。</li>
+</ul>
+<h3 id="多级索引"><a href="#多级索引" class="headerlink" title="多级索引"></a>多级索引</h3><ul>
+<li>如果主索引不能放在内存中，访问效率将变低。</li>
+<li>单层索引：<ul>
+<li>在索引文件上使用二分搜索定位索引项，如果索引占b个块，二分搜索需要读取log2(b)个块。</li>
+</ul>
+</li>
+<li>解决方案：<ul>
+<li>把主索引当做一个连续的文件保留在磁盘上，创建一个它之上的稀疏索引。</li>
+<li>外层索引 – 主索引上的稀疏索引</li>
+<li>内索层引 – 主索引文件</li>
+</ul>
+</li>
+<li>如果外层索引还是太大而无法放在内存中，可以再次创建一个次级索引，以此类推。</li>
+<li>多级索引的缺点：对文件进行插入或删除操作时，各级索引必须全部更新。</li>
+</ul>
+<p><img src="/images/DuoJiIndex.png" alt="DuoJiIndex" loading="lazy"></p>
+<h3 id="多码索引"><a href="#多码索引" class="headerlink" title="多码索引"></a>多码索引</h3><ul>
+<li>用户可以在多个属性上建立索引，这种索引叫做复合索引(组合索引)。<ul>
+<li>复合索引在数据库操作期间所需的开销更小,可以代替多个单一索引。</li>
+<li>create unique index sc_pk on SC(sno,cno)</li>
+</ul>
+</li>
+<li>复合索引的最左匹配原则：<ul>
+<li>即最左优先，在检索数据时从复合索引的最左边开始匹配，示例：对列col1、列col2和列col3建一个复合索引，实际建立了(col1)、(col1,col2)、(col,col2,col3)三个索引。</li>
+</ul>
+</li>
+</ul>
+<h3 id="索引顺序文件"><a href="#索引顺序文件" class="headerlink" title="索引顺序文件"></a>索引顺序文件</h3><p>在搜索码上有聚集索引的文件。</p>
+<h3 id="B-树索引文件"><a href="#B-树索引文件" class="headerlink" title="B+树索引文件"></a>B+树索引文件</h3><p>B+树索引文件是索引顺序文件的一种替代。</p>
+<ul>
+<li>索引顺序文件的缺点：<ul>
+<li>随着文件的增大，索引查找性能和数据顺序扫描性能都会下降，这是由于许多溢出块会被创建。 </li>
+<li>频繁重组整个文件是必须的。</li>
+</ul>
+</li>
+<li>B+树索引文件的优点：<ul>
+<li>在数据插入和删除时，能够通过小的自动调整来保持平衡。 </li>
+<li>不需要重组文件来维持性能。</li>
+</ul>
+</li>
+<li>B+树的缺点：<ul>
+<li>增加文件插入和删除的时间开销，同时会增加空间开销。</li>
+</ul>
+</li>
+<li>B+树利大于弊，被广泛应用。</li>
+</ul>
+<p><img src="/images/BTreeIndex.png" alt="BTreeIndex" loading="lazy"></p>
+<h4 id="B-树结点结构"><a href="#B-树结点结构" class="headerlink" title="B+树结点结构"></a>B+树结点结构</h4><ul>
+<li><p>典型结点</p>
+<table>
+<thead>
+<tr>
+<th align="center">P1</th>
+<th align="center">K1</th>
+<th align="center">P2</th>
+<th align="center">…</th>
+<th align="center">Pn-1</th>
+<th align="center">Kn-1</th>
+<th align="center">Pn</th>
+</tr>
+</thead>
+</table>
+<blockquote>
+<p>Ki 是搜索码值；Pi 是指向孩子结点的指针(对于非叶结点)或者指向记录或记录桶的指针(对于叶子结点)。</p>
+</blockquote>
+</li>
+<li><p>结点中的搜索码是有序的：K1 &lt; K2 &lt; K3 &lt; … &lt; Kn-1</p>
+<ul>
+<li>两个属性的搜索码，如果a1 &lt; b1或者a1&#x3D;b1且a2 &lt; b2，则(a1,a2)&lt;(b1,b2)。</li>
+</ul>
+</li>
+</ul>
+<h4 id="B-树的叶子结点"><a href="#B-树的叶子结点" class="headerlink" title="B+树的叶子结点"></a>B+树的叶子结点</h4><p>叶结点的属性：</p>
+<ul>
+<li>指针 Pi (i &#x3D; 1, 2, …, n–1) 指向搜索码值为 Ki 的文件记录。 </li>
+<li>如果 Li，Lj 是叶结点并且 i &lt; j， Li 的搜索码值小于或等于 Lj 的搜索码值。</li>
+<li>Pn 指向按搜索码排序的下一个叶结点。</li>
+</ul>
+<p><img src="/images/LeafNode.png" alt="LeafNode" loading="lazy"></p>
+<h4 id="B-树的非叶结点"><a href="#B-树的非叶结点" class="headerlink" title="B+树的非叶结点"></a>B+树的非叶结点</h4><p>非叶结点形成叶结点上的一个多级稀疏索引，对于一个包含 m 个指针的非叶结点:</p>
+<ul>
+<li>P1 指针所指子树上的所有搜索码值小于 K1。</li>
+<li>对 2 &lt;&#x3D; i &lt;&#x3D; n–1，Pi 指针所指子树上的所有搜索码值大于或等于 Ki–1 且小于 Ki。</li>
+<li>Pn 指针所指子树上的所有搜索码值大于或等于 kn–1。</li>
+</ul>
+<h3 id="散列索引"><a href="#散列索引" class="headerlink" title="散列索引"></a>散列索引</h3><ul>
+<li>散列不仅可以用于文件的组织，还可以用于索引结构的创建。</li>
+<li>散列索引将搜索码及其相应的指针组织成散列文件结构</li>
+<li>基于将值平均分布到若干散列桶中。</li>
+<li>一个值所属的散列桶是由一个函数决定，该函数称为散列函数。</li>
+<li>散列索引只是一种辅助索引结构。<ul>
+<li>如果一个文件自身是按散列组织的，就不必在其上另外建立一个独立的索引结构。</li>
+<li>使用散列索引来表示散列文件结构，同时也用它表示辅助散列索引。</li>
+</ul>
+</li>
+<li>对于具有指定码值的记录检索，散列是一个更好的选择；但如果经常进行范围查询，顺序索引是首选。</li>
+</ul>
+<p><img src="/images/SanLieIndex.png" alt="SanLieIndex" loading="lazy"></p>
+<h4 id="散列桶"><a href="#散列桶" class="headerlink" title="散列桶"></a>散列桶</h4><ul>
+<li>定义：表示能存储一条或多条记录的一个存储单位，通常一个桶就是一<br>个磁盘块。</li>
+<li>生成：在散列文件组织中可以直接从搜索码使用散列函数得到包含记录的<br>桶。</li>
+<li>映射：带有不同搜索码值的记录可以映射到同一个桶中，因此，为了找到<br>一个记录，桶要被依次检索。</li>
+<li>桶溢出</li>
+</ul>
+<h4 id="散列函数"><a href="#散列函数" class="headerlink" title="散列函数"></a>散列函数</h4><ul>
+<li>定义：散列函数 h 是一个从所有搜索码值的集合 K 映射到桶地址的集合<br>B 的函数。</li>
+<li>作用：散列函数用来定位要访问，插入或删除的记录。</li>
+</ul>
+<h4 id="静态散列的不足"><a href="#静态散列的不足" class="headerlink" title="静态散列的不足"></a>静态散列的不足</h4><ul>
+<li>静态散列技术要求固定桶地址集合 B ，但是大多数数据库都会随时间而变大，这会带来很严重的问题。</li>
+<li>如果初始桶的数目太小，随着文件的增长，由于产生太多溢出，导致性能下降。<ul>
+<li>如果预期增长的空间提前被分配，大量空间将被浪费掉。</li>
+<li>如果数据库收缩，空间将会被再次浪费。</li>
+</ul>
+</li>
+<li>一种解决方案: 周期性的对散列结构进行重组。<ul>
+<li>规模大，耗时，扰乱正常操作。</li>
+</ul>
+</li>
+<li>更好的解决方案: 允许桶的数量被动态的修改。</li>
+</ul>
+<h4 id="动态散列"><a href="#动态散列" class="headerlink" title="动态散列"></a>动态散列</h4><ul>
+<li>能够适应数据库增长和收缩的需要</li>
+<li>允许散列函数动态改变</li>
+<li>可扩充散列 – 动态散列的一种形式 <ul>
+<li>散列函数产生的值范围相对较大，是 b 位二进制整数(一个典型的 b &#x3D; 32)</li>
+<li>定义了一个前缀，让前缀的长度为 i 位，0 &lt;&#x3D; i &lt;&#x3D; 32 <ul>
+<li>桶地址表大小 &#x3D; 2^i ，最初 i &#x3D; 0</li>
+<li>i 随着数据库的大小变化而增大或减小</li>
+</ul>
+</li>
+<li>不同的桶地址目录可能指向同一个桶</li>
+<li>因此，实际的桶数 &lt; 2^i<ul>
+<li>由于桶的结合和分裂，桶数动态变化</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="索引操作"><a href="#索引操作" class="headerlink" title="索引操作"></a>索引操作</h2><h3 id="索引更新"><a href="#索引更新" class="headerlink" title="索引更新"></a>索引更新</h3><ul>
+<li>文件中有记录被删除或者插入时，每个索引都必须更新。</li>
+<li>文件中有记录被更新时，其搜索码属性受到更新影响的任何索引也必须被更新。</li>
+</ul>
+<h4 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h4><h5 id="单级索引插入"><a href="#单级索引插入" class="headerlink" title="单级索引插入"></a>单级索引插入</h5><ul>
+<li>用被插入记录的搜索码值进行一次检索</li>
+<li>稠密索引<ul>
+<li>如果搜索码值没有出现在索引中，将其插入</li>
+<li>否则<ul>
+<li>如果索引项存储的是指向具有相同搜索码值的所有记录的指针，那么系统就在索引项中增加一个指向新纪录的指针。</li>
+<li>否则，索引项存储一个仅指向具有相同搜索码值的第一条记录的指针，系统把待插入的记录放到具有相同搜索码值的其他记录后面。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>稀疏索引 – 如果索引对文件中的每个块只存储一个索引项，除非创建了一个新的块，否则不对索引做任何改变。<ul>
+<li>如果创建了一个新的块，出现在新块中的第一个搜索码值被插入到索引项中。</li>
+</ul>
+</li>
+</ul>
+<h5 id="多级索引插入"><a href="#多级索引插入" class="headerlink" title="多级索引插入"></a>多级索引插入</h5><p>算法是单级算法的简单扩展。</p>
+<h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><ul>
+<li>稠密索引<ul>
+<li>如果待删除的记录是具有这个特定搜索码值的唯一的记录，则系统就从索引中删除相应的索引项。</li>
+<li>否则：<ul>
+<li>如果索引项存储的是具有相同搜索码的所有记录指针，则系统从索引项中删除指向待删除记录的指针。</li>
+<li>否则，索引项存储一个仅指向具有该搜索码值的第一条记录的指针，如果待删除的记录是具有该搜索码值的第一条记录，系统更新索引项，使其指向下一条记录。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>稀疏索引<ul>
+<li>如果索引中并不包含待删除记录搜索码值的索引项，则索引不作任何变动。</li>
+<li>否则<ul>
+<li>如果待删除记录是具有该搜索码值的唯一记录，系统用下一个搜索码值的索引记录替换相应的索引记录；如果下一个搜索码值已经有了一个索引项，则删除而不是替换。</li>
+<li>否则，如果该搜索码值的索引项指向待删除记录，系统更新索引项，使其指向具有相同搜索码值的下一条记录。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="建立索引的原则"><a href="#建立索引的原则" class="headerlink" title="建立索引的原则"></a>建立索引的原则</h2><ul>
+<li>索引提高数据查询效率，但是影响数据更新的效率，建立索引的原则：<ul>
+<li>为经常用于查询条件的属性建立索引</li>
+<li>为经常用于表连接的属性建立索引</li>
+<li>为经常需要排序和分组属性建立索引</li>
+<li>大部分DBMS为主码自动建立唯一索引</li>
+<li>取值区分度高的属性适合建索引，取值重复度高的属性不适合建索引</li>
+<li>充分利用复合索引<ul>
+<li>比如表中已经有属性a的索引，现在要增加属性a和属性b的索引(a,b)，那么只需要修改原来的索引即可。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="位图索引"><a href="#位图索引" class="headerlink" title="位图索引"></a>位图索引</h2><ul>
+<li>位图(bitmap)就是位的一个简单数组。</li>
+<li>关系r的属性A上的位图索引(bitmap index)是由A能取的每个值建立的位图构成的</li>
+<li>位图索引主要针对列中大量相同值的列而创建。<ul>
+<li>比如“性别”列，“职称”列等。</li>
+</ul>
+</li>
+<li>为了使用位图索引，关系中的记录必须按顺序编号，比如说从 0 开始。<ul>
+<li>对于给定的一个n值，必须能很简单地检索到编号为n的记录。</li>
+</ul>
+</li>
+<li>每个位图都有和关系中的记录数相等数目的位。<ul>
+<li>如果编号为i的记录在属性A的值为vj，则位图中的第i个位设置为1 ，而该位图的其他所有位设置为0。</li>
+</ul>
+</li>
+</ul>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="Donate" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-hand-coin-line"></use></svg></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>Post author: </strong>Orlando Chen</li><li class="post-copyright-link"><strong>Post link: </strong><a href="https://orlando-chen.github.io/2022/06/23/Index/" title="索引">https://orlando-chen.github.io/2022/06/23/Index/</a></li><li class="post-copyright-license"><strong>Copyright Notice: </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><svg class="icon"><use xlink:href="#icon-creative-commons-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-by-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-nc-line"></use></svg><svg class="icon"><use xlink:href="#icon-creative-commons-sa-line"></use></svg></a> unless otherwise stated.</li></ul></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2022/06/24/Query/" rel="prev" title="查询处理与优化"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-left-s-line"></use></svg><span class="post-nav-text">查询处理与优化</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/06/21/UML/" rel="next" title="UML"><span class="post-nav-text">UML</span><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-right-s-line"></use></svg></a></div></div></div><div class="hty-card" id="comment"></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2022 </span><span class="with-love" id="animate"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-cloud-line"></use></svg></span><span class="author"> Orlando Chen</span></div><div class="powered"><span>Powered by <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> v6.1.0</span><span class="footer-separator">|</span><span>Theme - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.9.0</span></div></footer><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><svg class="icon" aria-hidden="true"><use xlink:href="#icon-arrow-up-s-line"></use></svg><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a></div></body></html>
